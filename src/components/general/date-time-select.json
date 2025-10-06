@@ -1,0 +1,16 @@
+{
+  "collectionName": "components_general_date_time_selects",
+  "info": {
+    "displayName": "DateTimeSelect",
+    "icon": "apps"
+  },
+  "options": {},
+  "attributes": {
+    "date": {
+      "type": "date"
+    },
+    "time": {
+      "type": "time"
+    }
+  }
+}

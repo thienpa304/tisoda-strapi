@@ -1,0 +1,88 @@
+{
+  "kind": "collectionType",
+  "collectionName": "places",
+  "info": {
+    "singularName": "place",
+    "pluralName": "places",
+    "displayName": "Place",
+    "description": ""
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "name": {
+      "type": "string",
+      "required": true
+    },
+    "slug": {
+      "type": "uid"
+    },
+    "metadata": {
+      "type": "component",
+      "component": "general.metadata",
+      "repeatable": false
+    },
+    "category_places": {
+      "type": "relation",
+      "relation": "manyToMany",
+      "target": "api::category-place.category-place",
+      "mappedBy": "places"
+    },
+    "general_info": {
+      "type": "component",
+      "component": "place.general-info",
+      "repeatable": false
+    },
+    "appointment": {
+      "type": "relation",
+      "relation": "oneToOne",
+      "target": "api::appointment.appointment",
+      "mappedBy": "place"
+    },
+    "quantity_sold": {
+      "type": "integer",
+      "required": true
+    },
+    "services": {
+      "type": "component",
+      "component": "place.services",
+      "repeatable": true
+    },
+    "reviews": {
+      "type": "component",
+      "component": "place.review",
+      "repeatable": true
+    },
+    "payment_methods": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::payment-method.payment-method"
+    },
+    "place_owner": {
+      "type": "component",
+      "component": "place.place-owner",
+      "repeatable": false
+    },
+    "service_group_description": {
+      "type": "blocks"
+    },
+    "discount": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::discount.discount",
+      "inversedBy": "places"
+    },
+    "avatar": {
+      "type": "media",
+      "multiple": false,
+      "allowedTypes": [
+        "images",
+        "files",
+        "videos",
+        "audios"
+      ]
+    }
+  }
+}

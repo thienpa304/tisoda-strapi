@@ -1,0 +1,19 @@
+{
+  "collectionName": "components_homepage_promotions",
+  "info": {
+    "displayName": "Promotion",
+    "icon": "priceTag",
+    "description": ""
+  },
+  "options": {},
+  "attributes": {
+    "title": {
+      "type": "string"
+    },
+    "places": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::place.place"
+    }
+  }
+}

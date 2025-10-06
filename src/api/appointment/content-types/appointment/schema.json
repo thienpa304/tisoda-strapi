@@ -1,0 +1,53 @@
+{
+  "kind": "collectionType",
+  "collectionName": "appointments",
+  "info": {
+    "singularName": "appointment",
+    "pluralName": "appointments",
+    "displayName": "Appointment",
+    "description": ""
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "attributes": {
+    "place": {
+      "type": "relation",
+      "relation": "oneToOne",
+      "target": "api::place.place",
+      "inversedBy": "appointment"
+    },
+    "status_item": {
+      "type": "enumeration",
+      "enum": [
+        "Đã xác nhận",
+        "Đã hủy"
+      ]
+    },
+    "user_name": {
+      "type": "string"
+    },
+    "user_phone": {
+      "type": "string"
+    },
+    "appointment_summary": {
+      "type": "component",
+      "repeatable": false,
+      "component": "appointment.appointment-summary"
+    },
+    "date_time_select": {
+      "type": "component",
+      "repeatable": false,
+      "component": "general.date-time-select"
+    },
+    "payment_methods": {
+      "type": "enumeration",
+      "enum": [
+        "Thẻ tín dụng",
+        "Chuyển khoản",
+        "Tiền mặt",
+        "Ví điện tử"
+      ]
+    }
+  }
+}

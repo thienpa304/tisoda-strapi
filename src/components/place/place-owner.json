@@ -1,0 +1,19 @@
+{
+  "collectionName": "components_place_place_owners",
+  "info": {
+    "displayName": "Place owner",
+    "icon": "key",
+    "description": ""
+  },
+  "options": {},
+  "attributes": {
+    "contact_name": {
+      "type": "string"
+    },
+    "phone": {
+      "type": "component",
+      "repeatable": true,
+      "component": "general.phone-number"
+    }
+  }
+}

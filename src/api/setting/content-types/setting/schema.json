@@ -1,0 +1,53 @@
+{
+  "kind": "singleType",
+  "collectionName": "settings",
+  "info": {
+    "singularName": "setting",
+    "pluralName": "settings",
+    "displayName": "Setting",
+    "description": ""
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "attributes": {
+    "logo": {
+      "type": "media",
+      "multiple": false,
+      "required": false,
+      "allowedTypes": [
+        "images",
+        "files",
+        "videos",
+        "audios"
+      ]
+    },
+    "siteName": {
+      "type": "string"
+    },
+    "emailAdmin": {
+      "type": "string"
+    },
+    "contact_info": {
+      "type": "component",
+      "repeatable": false,
+      "component": "general.contact-info"
+    },
+    "logo_mobile": {
+      "type": "media",
+      "multiple": false,
+      "required": false,
+      "allowedTypes": [
+        "images",
+        "files",
+        "videos",
+        "audios"
+      ]
+    },
+    "social": {
+      "type": "component",
+      "repeatable": true,
+      "component": "general.social"
+    }
+  }
+}

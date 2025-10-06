@@ -1,0 +1,44 @@
+{
+  "kind": "collectionType",
+  "collectionName": "category_places",
+  "info": {
+    "singularName": "category-place",
+    "pluralName": "category-places",
+    "displayName": "Category Place"
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "attributes": {
+    "name": {
+      "type": "string"
+    },
+    "thumbnail": {
+      "allowedTypes": [
+        "images",
+        "files",
+        "videos",
+        "audios"
+      ],
+      "type": "media",
+      "multiple": false
+    },
+    "description": {
+      "type": "text"
+    },
+    "slug": {
+      "type": "uid"
+    },
+    "places": {
+      "type": "relation",
+      "relation": "manyToMany",
+      "target": "api::place.place",
+      "inversedBy": "category_places"
+    },
+    "metadata": {
+      "type": "component",
+      "repeatable": false,
+      "component": "general.metadata"
+    }
+  }
+}

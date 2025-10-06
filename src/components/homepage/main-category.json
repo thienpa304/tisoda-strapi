@@ -1,0 +1,19 @@
+{
+  "collectionName": "components_homepage_main_categories",
+  "info": {
+    "displayName": "Main Category",
+    "icon": "bulletList",
+    "description": ""
+  },
+  "options": {},
+  "attributes": {
+    "title": {
+      "type": "string"
+    },
+    "items": {
+      "type": "component",
+      "repeatable": true,
+      "component": "homepage.main-category-item"
+    }
+  }
+}

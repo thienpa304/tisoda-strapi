@@ -1,0 +1,28 @@
+{
+  "collectionName": "components_homepage_main_category_items",
+  "info": {
+    "displayName": "Main Category Item",
+    "icon": "bulletList"
+  },
+  "options": {},
+  "attributes": {
+    "thumbnail": {
+      "allowedTypes": [
+        "images",
+        "files",
+        "videos",
+        "audios"
+      ],
+      "type": "media",
+      "multiple": false
+    },
+    "category_place": {
+      "type": "relation",
+      "relation": "oneToOne",
+      "target": "api::category-place.category-place"
+    },
+    "name": {
+      "type": "string"
+    }
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "collectionName": "components_general_contact_infos",
+  "info": {
+    "displayName": "ContactInfo",
+    "icon": "gate"
+  },
+  "options": {},
+  "attributes": {
+    "address": {
+      "type": "string"
+    },
+    "phone": {
+      "type": "string"
+    },
+    "email": {
+      "type": "string"
+    }
+  }
+}

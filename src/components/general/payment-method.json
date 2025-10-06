@@ -1,0 +1,20 @@
+{
+  "collectionName": "components_general_payment_methods",
+  "info": {
+    "displayName": "Payment method",
+    "icon": "rocket"
+  },
+  "options": {},
+  "attributes": {
+    "method": {
+      "type": "enumeration",
+      "enum": [
+        "Thẻ tín dụng",
+        "Chuyển khoản",
+        "Tiền mặt",
+        "Ví điện tử"
+      ],
+      "default": "Tiền mặt"
+    }
+  }
+}

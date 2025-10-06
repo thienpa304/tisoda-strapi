@@ -1,0 +1,47 @@
+{
+  "collectionName": "components_place_general_infos",
+  "info": {
+    "displayName": "General Info",
+    "icon": "information",
+    "description": ""
+  },
+  "options": {},
+  "attributes": {
+    "media": {
+      "type": "media",
+      "multiple": true,
+      "required": true,
+      "allowedTypes": [
+        "images",
+        "files",
+        "videos",
+        "audios"
+      ]
+    },
+    "highlight": {
+      "type": "blocks",
+      "required": true
+    },
+    "brief_intro": {
+      "type": "blocks",
+      "required": true
+    },
+    "address": {
+      "type": "component",
+      "component": "general.address",
+      "repeatable": false
+    },
+    "rating": {
+      "type": "component",
+      "component": "general.rating",
+      "repeatable": false,
+      "required": true
+    },
+    "opening_time": {
+      "type": "component",
+      "component": "place.opening-time",
+      "repeatable": true,
+      "required": true
+    }
+  }
+}

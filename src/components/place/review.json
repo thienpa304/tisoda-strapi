@@ -1,0 +1,19 @@
+{
+  "collectionName": "components_place_reviews",
+  "info": {
+    "displayName": "Review",
+    "icon": "seed"
+  },
+  "options": {},
+  "attributes": {
+    "reviewer_name": {
+      "type": "string"
+    },
+    "content": {
+      "type": "blocks"
+    },
+    "score": {
+      "type": "decimal"
+    }
+  }
+}

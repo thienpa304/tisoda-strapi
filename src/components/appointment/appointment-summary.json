@@ -1,0 +1,32 @@
+{
+  "collectionName": "components_appointment_appointment_summaries",
+  "info": {
+    "displayName": "Appointment Summary",
+    "icon": "stack",
+    "description": ""
+  },
+  "options": {},
+  "attributes": {
+    "place_name": {
+      "type": "string"
+    },
+    "place_address": {
+      "type": "string"
+    },
+    "service_name": {
+      "type": "string"
+    },
+    "price": {
+      "type": "biginteger"
+    },
+    "quantity": {
+      "type": "integer"
+    },
+    "total_price": {
+      "type": "biginteger"
+    },
+    "note": {
+      "type": "text"
+    }
+  }
+}

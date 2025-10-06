@@ -1,0 +1,19 @@
+{
+  "collectionName": "components_general_metadata",
+  "info": {
+    "displayName": "Metadata",
+    "icon": "bulletList"
+  },
+  "options": {},
+  "attributes": {
+    "meta_title": {
+      "type": "string"
+    },
+    "meta_description": {
+      "type": "text"
+    },
+    "keywords": {
+      "type": "text"
+    }
+  }
+}
