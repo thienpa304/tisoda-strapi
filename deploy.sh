@@ -35,22 +35,51 @@ else
     npm install
 fi
 
-# Build the application
-echo -e "${BLUE}Building application...${NC}"
+# Build the application to temporary directory
+echo -e "${BLUE}Building application to dist-new...${NC}"
+
+# Remove old dist-new if exists
+rm -rf dist-new
+
+# Build to new directory
 if [ -f "yarn.lock" ]; then
     yarn build
 else
     npm run build
 fi
 
-# Setup uploads symlink to persistent storage
-echo -e "${BLUE}Setting up uploads symlink...${NC}"
-if [ -d "dist/build/uploads" ]; then
-    rm -rf dist/build/uploads
+# Rename the built dist to dist-new for safety
+if [ -d "dist" ]; then
+    mv dist dist-new
+    echo -e "${GREEN}✓ Build completed successfully${NC}"
+else
+    echo -e "${RED}✗ Build failed - dist directory not created${NC}"
+    exit 1
 fi
-ln -sf /var/tisoda-uploads dist/build/uploads
+
+# Setup uploads symlink for new build
+echo -e "${BLUE}Setting up uploads symlink for new build...${NC}"
+if [ -d "dist-new/build/uploads" ]; then
+    rm -rf dist-new/build/uploads
+fi
+ln -sf /var/tisoda-uploads dist-new/build/uploads
 ln -sf /var/tisoda-uploads public/uploads
-echo -e "${GREEN}✓ Uploads symlinked to /var/tisoda-uploads${NC}"
+
+# Swap old and new builds (zero-downtime swap)
+echo -e "${BLUE}Swapping builds...${NC}"
+if [ -d "dist-old" ]; then
+    rm -rf dist-old
+fi
+
+# Move current dist to dist-old (if exists)
+if [ -d "dist" ]; then
+    mv dist dist-old
+    echo -e "${GREEN}✓ Backed up current build to dist-old${NC}"
+fi
+
+# Move new build to dist
+mv dist-new dist
+echo -e "${GREEN}✓ New build activated${NC}"
 
 # Check if PM2 is installed
 if ! command -v pm2 &> /dev/null; then
@@ -125,6 +154,13 @@ pm2 start ecosystem.config.js
 
 # Save PM2 process list
 pm2 save
+
+# Cleanup old build after successful deployment
+if [ -d "dist-old" ]; then
+    echo -e "${BLUE}Cleaning up old build...${NC}"
+    rm -rf dist-old
+    echo -e "${GREEN}✓ Old build removed${NC}"
+fi
 
 # Setup PM2 to start on system boot (run once)
 # pm2 startup
