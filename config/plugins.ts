@@ -1,4 +1,14 @@
 export default () => ({
+  upload: {
+    config: {
+      sizeLimit: 250 * 1024 * 1024, // 250MB
+      providerOptions: {
+        localServer: {
+          maxage: 86400000 // 1 day = 24 hours cache for better performance
+        },
+      },
+    },
+  },
   documentation: {
     enabled: true,
     config: {

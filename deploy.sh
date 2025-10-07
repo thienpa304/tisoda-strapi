@@ -43,6 +43,15 @@ else
     npm run build
 fi
 
+# Setup uploads symlink to persistent storage
+echo -e "${BLUE}Setting up uploads symlink...${NC}"
+if [ -d "dist/build/uploads" ]; then
+    rm -rf dist/build/uploads
+fi
+ln -sf /var/tisoda-uploads dist/build/uploads
+ln -sf /var/tisoda-uploads public/uploads
+echo -e "${GREEN}✓ Uploads symlinked to /var/tisoda-uploads${NC}"
+
 # Check if PM2 is installed
 if ! command -v pm2 &> /dev/null; then
     echo -e "${RED}PM2 is not installed. Installing PM2...${NC}"
