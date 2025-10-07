@@ -57,14 +57,6 @@ else
     exit 1
 fi
 
-# Setup uploads symlink for new build
-echo -e "${BLUE}Setting up uploads symlink for new build...${NC}"
-if [ -d "dist-new/build/uploads" ]; then
-    rm -rf dist-new/build/uploads
-fi
-ln -sf /var/tisoda-uploads dist-new/build/uploads
-ln -sf /var/tisoda-uploads public/uploads
-
 # Swap old and new builds (zero-downtime swap)
 echo -e "${BLUE}Swapping builds...${NC}"
 if [ -d "dist-old" ]; then
