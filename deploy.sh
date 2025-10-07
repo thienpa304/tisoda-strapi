@@ -83,6 +83,27 @@ fi
 # Create logs directory if it doesn't exist
 mkdir -p logs
 
+# Generate API documentation
+echo -e "${BLUE}Generating API documentation...${NC}"
+# Stop PM2 if running to free the port
+if pm2 list | grep -q "$APP_NAME"; then
+    pm2 stop $APP_NAME > /dev/null 2>&1 || true
+fi
+
+# Run in development mode briefly to generate docs
+NODE_ENV=development yarn start > /tmp/doc-gen.log 2>&1 &
+DOC_PID=$!
+sleep 20  # Wait for Strapi to start and generate docs
+kill $DOC_PID 2>/dev/null || true
+wait $DOC_PID 2>/dev/null || true
+
+# Check if documentation was generated
+if [ -f "src/extensions/documentation/documentation/1.0.0/full_documentation.json" ]; then
+    echo -e "${GREEN}✓ Documentation generated successfully${NC}"
+else
+    echo -e "${RED}⚠ Warning: Documentation generation may have failed${NC}"
+fi
+
 # Stop the app if it's running
 if pm2 list | grep -q "$APP_NAME"; then
     echo -e "${BLUE}Stopping existing app...${NC}"
