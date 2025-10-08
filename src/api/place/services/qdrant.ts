@@ -128,6 +128,7 @@ class QdrantService {
             id: place.id,
             vector: embedding,
             payload: {
+              id: place.id,
               name: place.name,
               description: place.description,
               categories: place.categories,

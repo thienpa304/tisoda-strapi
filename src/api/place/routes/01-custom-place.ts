@@ -1,5 +1,6 @@
 /**
  * Custom place routes for search functionality
+ * Strapi v5 compatible routes configuration
  */
 
 export default {
@@ -7,41 +8,49 @@ export default {
     {
       method: 'GET',
       path: '/places/search',
-      handler: 'place.search',
+      handler: 'api::place.place.search',
       config: {
         auth: false,
+        policies: [],
+        middlewares: [],
       },
     },
     {
       method: 'GET',
       path: '/places/nearby',
-      handler: 'place.nearby',
+      handler: 'api::place.place.nearby',
       config: {
         auth: false,
+        policies: [],
+        middlewares: [],
       },
     },
     {
       method: 'GET',
       path: '/places/:id/recommendations',
-      handler: 'place.recommendations',
+      handler: 'api::place.place.recommendations',
       config: {
         auth: false,
+        policies: [],
+        middlewares: [],
       },
     },
     {
       method: 'POST',
-      path: '/places/:id/sync',
-      handler: 'place.sync',
+      path: '/places/:documentId/sync',
+      handler: 'api::place.place.sync',
       config: {
         policies: ['admin::isAuthenticatedAdmin'],
+        middlewares: [],
       },
     },
     {
       method: 'POST',
       path: '/places/sync-all',
-      handler: 'place.syncAll',
+      handler: 'api::place.place.syncAll',
       config: {
         policies: ['admin::isAuthenticatedAdmin'],
+        middlewares: [],
       },
     },
   ],
