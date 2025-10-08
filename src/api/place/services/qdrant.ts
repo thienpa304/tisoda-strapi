@@ -4,7 +4,7 @@
  */
 
 import { QdrantClient } from '@qdrant/js-client-rest';
-import OpenAI from 'openai';
+import embeddingService from './embedding';
 
 interface PlaceVector {
   id: number;
@@ -21,7 +21,6 @@ interface PlaceVector {
 
 class QdrantService {
   private client: QdrantClient;
-  private openai: OpenAI;
   private collectionName = 'places';
 
   constructor() {
@@ -30,11 +29,6 @@ class QdrantService {
       url: process.env.QDRANT_URL || 'http://localhost:6333',
       apiKey: process.env.QDRANT_API_KEY,
     });
-
-    // Initialize OpenAI for embeddings
-    this.openai = new OpenAI({
-      apiKey: process.env.OPENAI_API_KEY,
-    });
   }
 
   /**
@@ -42,6 +36,12 @@ class QdrantService {
    */
   async initCollection() {
     try {
+      // Initialize embedding service first
+      await embeddingService.initialize();
+      
+      const providerInfo = embeddingService.getProviderInfo();
+      strapi.log.info(`📊 Embedding: ${providerInfo.provider} (${providerInfo.model}) - ${providerInfo.dimension}D`);
+
       // Check if collection exists
       const collections = await this.client.getCollections();
       const exists = collections.collections.some(
@@ -49,10 +49,10 @@ class QdrantService {
       );
 
       if (!exists) {
-        // Create collection with vector size 1536 (OpenAI embedding size)
+        // Create collection with dynamic vector size based on embedding provider
         await this.client.createCollection(this.collectionName, {
           vectors: {
-            size: 1536,
+            size: providerInfo.dimension,
             distance: 'Cosine',
           },
         });
@@ -82,23 +82,12 @@ class QdrantService {
   }
 
   /**
-   * Generate text embedding using OpenAI
+   * Generate text embedding using configured embedding service
    */
   async generateEmbedding(text: string): Promise<number[]> {
     try {
-      const response = await this.openai.embeddings.create({
-        model: 'text-embedding-ada-002',
-        input: text,
-      });
-
-      return response.data[0].embedding;
+      return await embeddingService.generateEmbedding(text);
     } catch (error: any) {
-      // Check if it's a quota/rate limit error
-      if (error?.status === 429) {
-        strapi.log.error('⚠️  OpenAI API quota exceeded. Please check your billing at https://platform.openai.com/account/billing');
-        throw new Error('OpenAI API quota exceeded. Please upgrade your plan or wait for quota reset.');
-      }
-      
       strapi.log.error('Failed to generate embedding:', error?.message || error);
       throw error;
     }
