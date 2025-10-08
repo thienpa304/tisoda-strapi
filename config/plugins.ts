@@ -1,3 +1,5 @@
+import { customRoutesDocs } from './documentation';
+
 export default () => ({
   upload: {
     config: {
@@ -32,6 +34,9 @@ export default () => ({
         // Add your API token here for authentication in Swagger UI
         // plugins: ['users-permissions'],
         path: '/documentation',
+        
+        // Custom routes documentation - imported from config/documentation.ts
+        mutateDocumentation: customRoutesDocs,
       },
       servers: [
         {

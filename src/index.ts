@@ -1,5 +1,3 @@
-// import type { Core } from '@strapi/strapi';
-
 export default {
   /**
    * An asynchronous register function that runs before
@@ -7,7 +5,7 @@ export default {
    *
    * This gives you an opportunity to extend code.
    */
-  register(/* { strapi }: { strapi: Core.Strapi } */) {},
+  register(/*{ strapi }*/) {},
 
   /**
    * An asynchronous bootstrap function that runs before
@@ -16,5 +14,15 @@ export default {
    * This gives you an opportunity to set up your data model,
    * run jobs, or perform some special logic.
    */
-  bootstrap(/* { strapi }: { strapi: Core.Strapi } */) {},
+  async bootstrap({ strapi }) {
+    // Initialize Qdrant collection on startup
+    try {
+      strapi.log.info('🚀 Initializing Qdrant collection...');
+      const qdrantService = require('./api/place/services/qdrant').default;
+      await qdrantService.initCollection();
+      strapi.log.info('✅ Qdrant collection initialized successfully');
+    } catch (error) {
+      strapi.log.error('❌ Failed to initialize Qdrant:', error);
+    }
+  },
 };
