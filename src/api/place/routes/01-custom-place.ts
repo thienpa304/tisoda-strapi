@@ -40,7 +40,7 @@ export default {
       path: '/places/:documentId/sync',
       handler: 'api::place.place.sync',
       config: {
-        policies: ['admin::isAuthenticatedAdmin'],
+        policies: [],
         middlewares: [],
       },
     },
@@ -49,7 +49,7 @@ export default {
       path: '/places/sync-all',
       handler: 'api::place.place.syncAll',
       config: {
-        policies: ['admin::isAuthenticatedAdmin'],
+        policies: [],
         middlewares: [],
       },
     },
