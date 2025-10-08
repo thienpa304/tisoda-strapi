@@ -92,8 +92,14 @@ class QdrantService {
       });
 
       return response.data[0].embedding;
-    } catch (error) {
-      strapi.log.error('Failed to generate embedding:', error);
+    } catch (error: any) {
+      // Check if it's a quota/rate limit error
+      if (error?.status === 429) {
+        strapi.log.error('⚠️  OpenAI API quota exceeded. Please check your billing at https://platform.openai.com/account/billing');
+        throw new Error('OpenAI API quota exceeded. Please upgrade your plan or wait for quota reset.');
+      }
+      
+      strapi.log.error('Failed to generate embedding:', error?.message || error);
       throw error;
     }
   }

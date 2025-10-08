@@ -68,6 +68,14 @@ export default factories.createCoreController(
         ctx.body = result
       } catch (error: any) {
         strapi.log.error('Search controller error:', error)
+        
+        // Handle OpenAI quota errors specifically
+        if (error.message?.includes('OpenAI API quota exceeded')) {
+          return ctx.throw(503, 'Search service temporarily unavailable. OpenAI API quota exceeded.', {
+            details: 'The AI search service has reached its usage limit. Please try again later or contact support.',
+          })
+        }
+        
         ctx.throw(500, 'Search failed', {details: error.message})
       }
     },

@@ -35,43 +35,32 @@ else
     npm install
 fi
 
-# Build the application to temporary directory
-echo -e "${BLUE}Building application to dist-new...${NC}"
+# Build the application
+echo -e "${BLUE}Building application...${NC}"
 
-# Remove old dist-new if exists
-rm -rf dist-new
-
-# Build to new directory
+# Build to dist directory
 if [ -f "yarn.lock" ]; then
     yarn build
 else
     npm run build
 fi
 
-# Rename the built dist to dist-new for safety
-if [ -d "dist" ]; then
-    mv dist dist-new
-    echo -e "${GREEN}✓ Build completed successfully${NC}"
-else
+# Check if build was successful
+if [ ! -d "dist" ]; then
     echo -e "${RED}✗ Build failed - dist directory not created${NC}"
     exit 1
 fi
 
+echo -e "${GREEN}✓ Build completed successfully${NC}"
+
 # Swap old and new builds (zero-downtime swap)
-echo -e "${BLUE}Swapping builds...${NC}"
+echo -e "${BLUE}Preparing for deployment...${NC}"
+
+# Remove old backup if exists
 if [ -d "dist-old" ]; then
     rm -rf dist-old
+    echo -e "${GREEN}✓ Cleaned up old backup${NC}"
 fi
-
-# Move current dist to dist-old (if exists)
-if [ -d "dist" ]; then
-    mv dist dist-old
-    echo -e "${GREEN}✓ Backed up current build to dist-old${NC}"
-fi
-
-# Move new build to dist
-mv dist-new dist
-echo -e "${GREEN}✓ New build activated${NC}"
 
 # Check if PM2 is installed
 if ! command -v pm2 &> /dev/null; then
@@ -113,46 +102,19 @@ fi
 # Create logs directory if it doesn't exist
 mkdir -p logs
 
-# Generate API documentation
-echo -e "${BLUE}Generating API documentation...${NC}"
-# Stop PM2 if running to free the port
+# Restart or start the app with PM2
 if pm2 list | grep -q "$APP_NAME"; then
-    pm2 stop $APP_NAME > /dev/null 2>&1 || true
-fi
-
-# Run in development mode briefly to generate docs
-NODE_ENV=development yarn start > /tmp/doc-gen.log 2>&1 &
-DOC_PID=$!
-sleep 20  # Wait for Strapi to start and generate docs
-kill $DOC_PID 2>/dev/null || true
-wait $DOC_PID 2>/dev/null || true
-
-# Check if documentation was generated
-if [ -f "src/extensions/documentation/documentation/1.0.0/full_documentation.json" ]; then
-    echo -e "${GREEN}✓ Documentation generated successfully${NC}"
+    echo -e "${BLUE}Reloading app with PM2 (zero-downtime)...${NC}"
+    pm2 reload ecosystem.config.js
+    echo -e "${GREEN}✓ App reloaded successfully${NC}"
 else
-    echo -e "${RED}⚠ Warning: Documentation generation may have failed${NC}"
+    echo -e "${BLUE}Starting app with PM2...${NC}"
+    pm2 start ecosystem.config.js
+    echo -e "${GREEN}✓ App started successfully${NC}"
 fi
-
-# Stop the app if it's running
-if pm2 list | grep -q "$APP_NAME"; then
-    echo -e "${BLUE}Stopping existing app...${NC}"
-    pm2 delete $APP_NAME
-fi
-
-# Start the app with PM2
-echo -e "${BLUE}Starting app with PM2...${NC}"
-pm2 start ecosystem.config.js
 
 # Save PM2 process list
 pm2 save
-
-# Cleanup old build after successful deployment
-if [ -d "dist-old" ]; then
-    echo -e "${BLUE}Cleaning up old build...${NC}"
-    rm -rf dist-old
-    echo -e "${GREEN}✓ Old build removed${NC}"
-fi
 
 # Setup PM2 to start on system boot (run once)
 # pm2 startup
