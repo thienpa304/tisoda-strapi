@@ -85,6 +85,20 @@ export default factories.createCoreService(
               $in: placeIds,
             },
           },
+          populate: {
+            avatar: true,
+            category_places: true,
+            general_info: {
+              populate: {
+                address: true,
+                rating: true,
+                opening_time: true,
+              },
+            },
+            services: true,
+            discount: true,
+          },
+
           status: 'published',
         })
         console.log(places.length, 'places')
