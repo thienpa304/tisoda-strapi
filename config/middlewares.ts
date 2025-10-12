@@ -29,9 +29,10 @@ export default [
   {
     name: 'strapi::cors',
     config: {
-      origin: ['https://admin.tisoda.com', 'http://localhost:*', 'https://tisoda.com', '*'],
+      origin: ['https://admin.tisoda.com', 'https://tisoda.com', 'https://dev.tisoda.com', 'http://localhost:3000', 'http://localhost:3001', 'http://127.0.0.1:3000'],
       headers: '*',
       methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD', 'OPTIONS'],
+      credentials: true,
     },
   },
   'strapi::poweredBy',

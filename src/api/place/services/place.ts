@@ -85,18 +85,31 @@ export default factories.createCoreService(
               $in: placeIds,
             },
           },
+          fields: ['name', 'quantity_sold'],
           populate: {
-            avatar: true,
-            category_places: true,
+            avatar: {
+              fields: ['url', 'alternativeText', 'width', 'height'],
+            },
+            category_places: {
+              fields: ['name'],
+            },
             general_info: {
+              fields: [], // Don't include any fields from general_info itself
               populate: {
-                address: true,
-                rating: true,
-                opening_time: true,
+                address: {
+                  fields: ['latitude', 'longitude'],
+                },
+                rating: {
+                  fields: ['score', 'review_count'],
+                },
+                media: {
+                  fields: ['url', 'alternativeText', 'width', 'height'],
+                },
               },
             },
-            services: true,
-            discount: true,
+            services: {
+              fields: ['service_name', 'price'],
+            },
           },
 
           status: 'published',
@@ -127,8 +140,8 @@ export default factories.createCoreService(
           case 'rating':
             sortedPlaces = placesWithScore.sort(
               (a, b) =>
-                (b.general_info?.rating?.value || 0) -
-                (a.general_info?.rating?.value || 0),
+                (b.general_info?.rating?.score || 0) -
+                (a.general_info?.rating?.score || 0),
             )
             break
           case 'distance':
@@ -187,19 +200,31 @@ export default factories.createCoreService(
             },
           },
           status: 'published',
+          fields: ['name', 'quantity_sold'],
           populate: {
-            avatar: true,
-            category_places: true,
+            avatar: {
+              fields: ['url', 'alternativeText', 'width', 'height'],
+            },
+            category_places: {
+              fields: ['name'],
+            },
             general_info: {
+              fields: [], // Don't include any fields from general_info itself
               populate: {
-                media: true,
-                address: true,
-                rating: true,
-                opening_time: true,
+                address: {
+                  fields: ['latitude', 'longitude'],
+                },
+                rating: {
+                  fields: ['score', 'review_count'],
+                },
+                media: {
+                  fields: ['url', 'alternativeText', 'width', 'height'],
+                },
               },
             },
-            services: true,
-            discount: true,
+            services: {
+              fields: ['service_name', 'price'],
+            },
           },
         })
 
@@ -318,7 +343,7 @@ export default factories.createCoreService(
           city: place.general_info?.address?.city || '',
           latitude: Number(place.general_info?.address?.latitude) || 0,
           longitude: Number(place.general_info?.address?.longitude) || 0,
-          rating: Number(place.general_info?.rating?.value) || 0,
+          rating: Number(place.general_info?.rating?.score) || 0,
           quantitySold: place.quantity_sold || 0,
         }
 
