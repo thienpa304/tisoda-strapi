@@ -92,7 +92,7 @@ export default factories.createCoreService(
               fields: ['url', 'alternativeText', 'width', 'height'],
             },
             category_places: {
-              fields: ['name'],
+              fields: ['name', 'slug'],
             },
             general_info: {
               fields: [], // Don't include any fields from general_info itself
@@ -212,7 +212,7 @@ export default factories.createCoreService(
               fields: ['url', 'alternativeText', 'width', 'height'],
             },
             category_places: {
-              fields: ['name'],
+              fields: ['name', 'slug'],
             },
             general_info: {
               fields: [], // Don't include any fields from general_info itself
