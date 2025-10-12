@@ -59,6 +59,7 @@ export default factories.createCoreService(
         } = params
 
         // Perform vector search with Qdrant
+        // Note: We don't use offset here because we need to sort first
         const results = await qdrantService.searchPlaces({
           query,
           latitude,
@@ -67,8 +68,8 @@ export default factories.createCoreService(
           city,
           categories,
           minRating,
-          limit: limit * 2, // Get more results for sorting
-          offset,
+          limit: (limit + offset) * 2, // Get enough results for sorting and pagination
+          offset: 0,
         })
 
         // Get full place details from Strapi
@@ -167,13 +168,13 @@ export default factories.createCoreService(
             break
         }
 
-        // Limit results
-        const paginatedResults = sortedPlaces.slice(0, limit)
+        // Apply pagination after sorting
+        const paginatedResults = sortedPlaces.slice(offset, offset + limit)
 
         return {
           data: paginatedResults,
           meta: {
-            total: results.length,
+            total: sortedPlaces.length,
             limit,
             offset,
             sortBy,
