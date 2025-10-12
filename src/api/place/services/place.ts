@@ -318,7 +318,9 @@ export default factories.createCoreService(
         const place: any = await strapi.documents('api::place.place').findOne({
           documentId: placeDocumentId,
           populate: {
-            category_places: true,
+            category_places: {
+              fields: ['name', 'slug'],
+            },
             general_info: {
               populate: {
                 address: true,
@@ -333,9 +335,9 @@ export default factories.createCoreService(
           throw new Error(`Place ${placeDocumentId} not found`)
         }
         strapi.log.info(`place id: ${place.id}`)
-        // Extract categories
+        // Extract categories - use slug for better API compatibility
         const categories =
-          place.category_places?.map((cat: any) => cat.name) || []
+          place.category_places?.map((cat: any) => cat.slug || cat.name) || []
 
         // Prepare data for Qdrant
         const placeVector = {
