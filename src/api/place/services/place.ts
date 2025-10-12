@@ -109,6 +109,11 @@ export default factories.createCoreService(
             },
             services: {
               fields: ['service_name', 'price'],
+              populate: {
+                gallery: {
+                  fields: ['url', 'alternativeText', 'width', 'height'],
+                },
+              },
             },
           },
 
