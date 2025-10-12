@@ -85,7 +85,7 @@ export default factories.createCoreService(
               $in: placeIds,
             },
           },
-          fields: ['name', 'quantity_sold'],
+          fields: ['name', 'slug', 'quantity_sold'],
           populate: {
             avatar: {
               fields: ['url', 'alternativeText', 'width', 'height'],
@@ -205,7 +205,7 @@ export default factories.createCoreService(
             },
           },
           status: 'published',
-          fields: ['name', 'quantity_sold'],
+          fields: ['name', 'slug', 'quantity_sold'],
           populate: {
             avatar: {
               fields: ['url', 'alternativeText', 'width', 'height'],
