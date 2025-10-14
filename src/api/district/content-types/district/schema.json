@@ -1,0 +1,61 @@
+{
+  "kind": "collectionType",
+  "collectionName": "districts",
+  "info": {
+    "singularName": "district",
+    "pluralName": "districts",
+    "displayName": "District",
+    "description": "Quận/Huyện"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {
+    "content-manager": {
+      "visible": true
+    },
+    "content-type-builder": {
+      "visible": true
+    }
+  },
+  "settings": {
+    "mainField": "display_name"
+  },
+  "attributes": {
+    "name": {
+      "type": "string",
+      "required": true,
+      "unique": false
+    },
+    "code": {
+      "type": "integer",
+      "required": true,
+      "unique": true
+    },
+    "codename": {
+      "type": "string"
+    },
+    "division_type": {
+      "type": "string"
+    },
+    "short_codename": {
+      "type": "string"
+    },
+    "display_name": {
+      "type": "string"
+    },
+    "province": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::province.province",
+      "inversedBy": "districts"
+    },
+    "wards": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::ward.ward",
+      "mappedBy": "district"
+    }
+  }
+}
+

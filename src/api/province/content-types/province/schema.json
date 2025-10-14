@@ -1,0 +1,55 @@
+{
+  "kind": "collectionType",
+  "collectionName": "provinces",
+  "info": {
+    "singularName": "province",
+    "pluralName": "provinces",
+    "displayName": "Province",
+    "description": "Tỉnh/Thành phố"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {
+    "content-manager": {
+      "visible": true
+    },
+    "content-type-builder": {
+      "visible": true
+    }
+  },
+  "settings": {
+    "mainField": "display_name"
+  },
+  "attributes": {
+    "name": {
+      "type": "string",
+      "required": true,
+      "unique": false
+    },
+    "code": {
+      "type": "integer",
+      "required": true,
+      "unique": true
+    },
+    "codename": {
+      "type": "string"
+    },
+    "division_type": {
+      "type": "string"
+    },
+    "phone_code": {
+      "type": "integer"
+    },
+    "display_name": {
+      "type": "string"
+    },
+    "districts": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::district.district",
+      "mappedBy": "province"
+    }
+  }
+}
+

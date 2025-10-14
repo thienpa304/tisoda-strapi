@@ -2,27 +2,66 @@
   "collectionName": "components_general_addresses",
   "info": {
     "displayName": "Address",
-    "icon": "house"
+    "description": "Complete address with province, district, ward and coordinates",
+    "icon": "map-marker-alt"
   },
   "options": {},
   "attributes": {
-    "ward": {
-      "type": "string"
+    "province": {
+      "type": "relation",
+      "relation": "oneToOne",
+      "target": "api::province.province",
+      "required": true 
     },
-    "city": {
-      "type": "string"
+    "district": {
+      "type": "relation",
+      "relation": "oneToOne",
+      "target": "api::district.district",
+      "required": false
+    },
+    "ward": {
+      "type": "relation",
+      "relation": "oneToOne",
+      "target": "api::ward.ward",
+      "required": false
     },
     "address": {
       "type": "string",
-      "required": true
+      "required": true,
+      "minLength": 3,
+      "maxLength": 500
+    },
+    "full_address": {
+      "type": "text"
+    },
+    "postal_code": {
+      "type": "string",
+      "maxLength": 20
     },
     "latitude": {
-      "type": "decimal",
-      "required": true
+      "type": "float",
+      "required": true,
+      "min": -90,
+      "max": 90
     },
     "longitude": {
-      "type": "decimal",
-      "required": true
+      "type": "float",
+      "required": true,
+      "min": -180,
+      "max": 180
+    },
+    "google_maps_url": {
+      "type": "string",
+      "maxLength": 1000
+    },
+    "country": {
+      "type": "string",
+      "default": "Vietnam"
+    },
+    "notes": {
+      "type": "text",
+      "maxLength": 1000
     }
   }
 }
+

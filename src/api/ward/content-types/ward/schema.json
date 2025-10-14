@@ -1,0 +1,55 @@
+{
+  "kind": "collectionType",
+  "collectionName": "wards",
+  "info": {
+    "singularName": "ward",
+    "pluralName": "wards",
+    "displayName": "Ward",
+    "description": "Phường/Xã/Thị trấn"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {
+    "content-manager": {
+      "visible": true
+    },
+    "content-type-builder": {
+      "visible": true
+    }
+  },
+  "settings": {
+    "mainField": "display_name"
+  },
+  "attributes": {
+    "name": {
+      "type": "string",
+      "required": true,
+      "unique": false
+    },
+    "code": {
+      "type": "integer",
+      "required": true,
+      "unique": true
+    },
+    "codename": {
+      "type": "string"
+    },
+    "division_type": {
+      "type": "string"
+    },
+    "short_codename": {
+      "type": "string"
+    },
+    "display_name": {
+      "type": "string"
+    },
+    "district": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::district.district",
+      "inversedBy": "wards"
+    }
+  }
+}
+

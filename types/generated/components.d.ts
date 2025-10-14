@@ -26,10 +26,11 @@ export interface GeneralAddress extends Struct.ComponentSchema {
   };
   attributes: {
     address: Schema.Attribute.String & Schema.Attribute.Required;
-    city: Schema.Attribute.String;
+    district: Schema.Attribute.Relation<'oneToOne', 'api::district.district'>;
     latitude: Schema.Attribute.Decimal & Schema.Attribute.Required;
     longitude: Schema.Attribute.Decimal & Schema.Attribute.Required;
-    ward: Schema.Attribute.String;
+    province: Schema.Attribute.Relation<'oneToOne', 'api::province.province'>;
+    ward: Schema.Attribute.Relation<'oneToOne', 'api::ward.ward'>;
   };
 }
 

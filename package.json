@@ -12,7 +12,8 @@
     "start": "strapi start",
     "strapi": "strapi",
     "upgrade": "npx @strapi/upgrade latest",
-    "upgrade:dry": "npx @strapi/upgrade latest --dry"
+    "upgrade:dry": "npx @strapi/upgrade latest --dry",
+    "seed:provinces": "curl -X POST http://localhost:1337/api/provinces/seed"
   },
   "dependencies": {
     "@qdrant/js-client-rest": "^1.15.1",

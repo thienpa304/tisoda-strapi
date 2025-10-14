@@ -492,6 +492,43 @@ export interface ApiDiscountDiscount extends Struct.CollectionTypeSchema {
   };
 }
 
+export interface ApiDistrictDistrict extends Struct.CollectionTypeSchema {
+  collectionName: 'districts';
+  info: {
+    description: 'Qu\u1EADn/Huy\u1EC7n';
+    displayName: 'District';
+    pluralName: 'districts';
+    singularName: 'district';
+  };
+  options: {
+    draftAndPublish: false;
+  };
+  attributes: {
+    code: Schema.Attribute.Integer &
+      Schema.Attribute.Required &
+      Schema.Attribute.Unique;
+    codename: Schema.Attribute.String;
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    division_type: Schema.Attribute.String;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
+    localizations: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::district.district'
+    > &
+      Schema.Attribute.Private;
+    name: Schema.Attribute.String & Schema.Attribute.Required;
+    province: Schema.Attribute.Relation<'manyToOne', 'api::province.province'>;
+    publishedAt: Schema.Attribute.DateTime;
+    short_codename: Schema.Attribute.String;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    wards: Schema.Attribute.Relation<'oneToMany', 'api::ward.ward'>;
+  };
+}
+
 export interface ApiHomepageHomepage extends Struct.SingleTypeSchema {
   collectionName: 'homepages';
   info: {
@@ -635,6 +672,42 @@ export interface ApiPlacePlace extends Struct.CollectionTypeSchema {
   };
 }
 
+export interface ApiProvinceProvince extends Struct.CollectionTypeSchema {
+  collectionName: 'provinces';
+  info: {
+    description: 'T\u1EC9nh/Th\u00E0nh ph\u1ED1';
+    displayName: 'Province';
+    pluralName: 'provinces';
+    singularName: 'province';
+  };
+  options: {
+    draftAndPublish: false;
+  };
+  attributes: {
+    code: Schema.Attribute.Integer &
+      Schema.Attribute.Required &
+      Schema.Attribute.Unique;
+    codename: Schema.Attribute.String;
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    districts: Schema.Attribute.Relation<'oneToMany', 'api::district.district'>;
+    division_type: Schema.Attribute.String;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
+    localizations: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::province.province'
+    > &
+      Schema.Attribute.Private;
+    name: Schema.Attribute.String & Schema.Attribute.Required;
+    phone_code: Schema.Attribute.Integer;
+    publishedAt: Schema.Attribute.DateTime;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+  };
+}
+
 export interface ApiSettingSetting extends Struct.SingleTypeSchema {
   collectionName: 'settings';
   info: {
@@ -665,6 +738,39 @@ export interface ApiSettingSetting extends Struct.SingleTypeSchema {
     publishedAt: Schema.Attribute.DateTime;
     siteName: Schema.Attribute.String;
     social: Schema.Attribute.Component<'general.social', true>;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+  };
+}
+
+export interface ApiWardWard extends Struct.CollectionTypeSchema {
+  collectionName: 'wards';
+  info: {
+    description: 'Ph\u01B0\u1EDDng/X\u00E3/Th\u1ECB tr\u1EA5n';
+    displayName: 'Ward';
+    pluralName: 'wards';
+    singularName: 'ward';
+  };
+  options: {
+    draftAndPublish: false;
+  };
+  attributes: {
+    code: Schema.Attribute.Integer &
+      Schema.Attribute.Required &
+      Schema.Attribute.Unique;
+    codename: Schema.Attribute.String;
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    district: Schema.Attribute.Relation<'manyToOne', 'api::district.district'>;
+    division_type: Schema.Attribute.String;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
+    localizations: Schema.Attribute.Relation<'oneToMany', 'api::ward.ward'> &
+      Schema.Attribute.Private;
+    name: Schema.Attribute.String & Schema.Attribute.Required;
+    publishedAt: Schema.Attribute.DateTime;
+    short_codename: Schema.Attribute.String;
     updatedAt: Schema.Attribute.DateTime;
     updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
@@ -1183,11 +1289,14 @@ declare module '@strapi/strapi' {
       'api::appointment.appointment': ApiAppointmentAppointment;
       'api::category-place.category-place': ApiCategoryPlaceCategoryPlace;
       'api::discount.discount': ApiDiscountDiscount;
+      'api::district.district': ApiDistrictDistrict;
       'api::homepage.homepage': ApiHomepageHomepage;
       'api::page.page': ApiPagePage;
       'api::payment-method.payment-method': ApiPaymentMethodPaymentMethod;
       'api::place.place': ApiPlacePlace;
+      'api::province.province': ApiProvinceProvince;
       'api::setting.setting': ApiSettingSetting;
+      'api::ward.ward': ApiWardWard;
       'plugin::content-releases.release': PluginContentReleasesRelease;
       'plugin::content-releases.release-action': PluginContentReleasesReleaseAction;
       'plugin::i18n.locale': PluginI18NLocale;
