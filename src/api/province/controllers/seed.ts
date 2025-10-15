@@ -4,6 +4,7 @@
 
 const API_BASE_URL = 'https://provinces.open-api.vn/api';
 const API_BASE_URL_V1 = 'https://provinces.open-api.vn/api/v1';
+const API_BASE_URL_V2 = 'https://provinces.open-api.vn/api/v2';
 
 interface Province {
   code: number;
@@ -53,7 +54,7 @@ async function fetchAllDistricts(): Promise<District[]> {
 }
 
 async function fetchAllWards(): Promise<Ward[]> {
-  const response = await fetch(`${API_BASE_URL_V1}/w/`);
+  const response = await fetch(`${API_BASE_URL_V2}/w/`);
   if (!response.ok) {
     throw new Error(`HTTP error! status: ${response.status}`);
   }
