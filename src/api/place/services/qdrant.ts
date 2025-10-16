@@ -146,20 +146,26 @@ class QdrantService {
 
   /**
    * Create searchable text from place data
+   * Enhanced to include all relevant searchable content
    */
   createSearchText(place: PlaceVector): string {
     const parts = [
+      // Place name - highest priority
       place.name,
-      place.description,
+      // Service names - critical for service-based searches
       place.serviceNames?.join(' '),
       place.serviceGroupNames?.join(' '),
+      // Category information
       place.categoryNames?.join(' '),
+      place.categories.join(' '),
+      // Description
+      place.description,
+      // Location information
       place.address,
       place.city,
       place.province,
       place.district,
       place.ward,
-      place.categories.join(' '),
     ].filter(Boolean)
 
     return parts.join(' ')
@@ -231,43 +237,6 @@ class QdrantService {
       strapi.log.error(`Failed to delete place ${documentId}:`, error)
       throw error
     }
-  }
-
-  /**
-   * Calculate text similarity for exact/partial matching
-   */
-  private calculateTextSimilarity(query: string, text: string): number {
-    const queryLower = query.toLowerCase().trim()
-    const textLower = text.toLowerCase().trim()
-
-    // Exact match - highest boost
-    if (textLower === queryLower) {
-      return 1.0
-    }
-
-    // Starts with query - high boost
-    if (textLower.startsWith(queryLower)) {
-      return 0.8
-    }
-
-    // Contains query - medium boost
-    if (textLower.includes(queryLower)) {
-      return 0.6
-    }
-
-    // Check for word matches
-    const queryWords = queryLower.split(/\s+/)
-    const textWords = textLower.split(/\s+/)
-
-    const matchingWords = queryWords.filter((qw) =>
-      textWords.some((tw) => tw.includes(qw) || qw.includes(tw)),
-    )
-
-    if (matchingWords.length > 0) {
-      return 0.4 * (matchingWords.length / queryWords.length)
-    }
-
-    return 0
   }
 
   /**
@@ -394,38 +363,12 @@ class QdrantService {
         offset,
         with_payload: true,
       })
-
-      // Hybrid scoring: Combine vector similarity with exact match boosting
-      const rerankedResults = searchResult.map((result) => {
-        const vectorScore = result.score || 0;
-        const payload = result.payload as any;
-        
-        // Calculate exact match scores for different fields
-        const nameMatchScore = this.calculateTextSimilarity(query, payload.name || '');
-        const addressMatchScore = this.calculateTextSimilarity(query, payload.address || '');
-        
-        // Weighted hybrid score
-        // Name matches are heavily weighted (0.5), vector similarity (0.4), address match (0.1)
-        const hybridScore = 
-          (vectorScore * 0.4) + 
-          (nameMatchScore * 0.5) + 
-          (addressMatchScore * 0.1);
-
+      return searchResult.map((result) => {
         return {
-          id: result.id,
-          score: hybridScore,
-          vectorScore,
-          nameMatchScore,
-          ...payload,
-        };
-      });
-
-      // Sort by hybrid score and return top results
-      const sortedResults = rerankedResults
-        .sort((a, b) => b.score - a.score)
-        .slice(0, limit)
-
-      return sortedResults
+          ...result.payload,
+          score: result.score,
+        }
+      })
     } catch (error) {
       strapi.log.error('Failed to search places:', error)
       throw error

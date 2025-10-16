@@ -81,16 +81,18 @@ export default factories.createCoreService(
           offset: 0,
         })
 
-        strapi.log.info(`🔍 Qdrant search results: ${results.length} places found for query: "${query}"`)
+        strapi.log.info(
+          `🔍 Qdrant search results: ${results.length} places found for query: "${query}"`,
+        )
 
         // Get full place details from Strapi
-        const placeIds = results.map((r) => String(r.documentId))
+        const placeIds = results.map((r: any) => String(r.documentId))
 
         if (placeIds.length === 0) {
           strapi.log.warn(`⚠️ No places found in Qdrant for query: "${query}"`)
           return {data: [], meta: {total: 0, limit, offset, sortBy}}
         }
-        
+
         strapi.log.info(`📍 Found place IDs: ${placeIds.join(', ')}`)
 
         const places = await strapi.documents('api::place.place').findMany({
@@ -151,7 +153,9 @@ export default factories.createCoreService(
 
         // Map results with scores
         const placesWithScore: PlaceWithScore[] = places.map((place: any) => {
-          const result = results.find((r) => r.document_id === place.documentId)
+          const result = results.find(
+            (r: any) => r.documentId === place.documentId,
+          )
           return {
             ...place,
             searchScore: result?.score || 0,
@@ -286,7 +290,10 @@ export default factories.createCoreService(
      */
     async getRecommendations(documentId: string, limit: number = 10) {
       try {
-        const results = await qdrantService.getRecommendations(documentId, limit)
+        const results = await qdrantService.getRecommendations(
+          documentId,
+          limit,
+        )
 
         const placeIds = results.map((r: any) => String(r.documentId))
 
@@ -360,9 +367,9 @@ export default factories.createCoreService(
               populate: {
                 address: {
                   populate: {
-                    province: { fields: ['name', 'codename'] },
-                    district: { fields: ['name', 'codename'] },
-                    ward: { fields: ['name', 'codename'] },
+                    province: {fields: ['name', 'codename']},
+                    district: {fields: ['name', 'codename']},
+                    ward: {fields: ['name', 'codename']},
                   },
                 },
                 rating: true,
@@ -384,17 +391,31 @@ export default factories.createCoreService(
         const categories =
           place.category_places?.map((cat: any) => cat.slug || cat.name) || []
 
-        // Extract service data
-        const serviceNames: string[] = (place.services || [])
-          .map((s: any) => s.service_name)
-          .filter((name: any) => name && typeof name === 'string') as string[]
-        
-        const serviceGroupNames: string[] = [...new Set(
-          (place.services || [])
-            .map((s: any) => s.service_group_name)
-            .filter((name: any) => name && typeof name === 'string')
-        )] as string[]
-        
+        // Extract service data with better filtering and deduplication
+        const serviceNames: string[] = [
+          ...new Set(
+            (place.services || [])
+              .map((s: any) => s.service_name)
+              .filter(
+                (name: any) =>
+                  name && typeof name === 'string' && name.trim().length > 0,
+              )
+              .map((name: string) => name.trim()),
+          ),
+        ] as string[]
+
+        const serviceGroupNames: string[] = [
+          ...new Set(
+            (place.services || [])
+              .map((s: any) => s.service_group_name)
+              .filter(
+                (name: any) =>
+                  name && typeof name === 'string' && name.trim().length > 0,
+              )
+              .map((name: string) => name.trim()),
+          ),
+        ] as string[]
+
         const categoryNames: string[] = (place.category_places || [])
           .map((c: any) => c.name)
           .filter((name: any) => name && typeof name === 'string') as string[]
@@ -429,7 +450,7 @@ export default factories.createCoreService(
         await qdrantService.upsertPlace(placeVector)
 
         strapi.log.info(
-          `✅ Place ${placeDocumentId} (ID: ${place.id}) synced to Qdrant`,
+          `✅ Place ${placeDocumentId} (ID: ${place.id}) synced to Qdrant with services: [${serviceNames.join(', ')}]`,
         )
       } catch (error) {
         strapi.log.error(
