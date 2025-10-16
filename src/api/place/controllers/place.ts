@@ -15,16 +15,25 @@ export default factories.createCoreController(
      * GET /api/places/search
      *
      * Query params:
-     * - q: search query
-     * - lat: latitude
-     * - lng: longitude
+     * - q: search query (required)
+     * - lat: latitude for geo-spatial search
+     * - lng: longitude for geo-spatial search
      * - radius: search radius in km (default: 10)
-     * - city: filter by city
+     * - city: filter by city name
+     * - province: filter by province codename (e.g., "ho-chi-minh")
+     * - district: filter by district codename (e.g., "quan-1")
+     * - ward: filter by ward codename (e.g., "phuong-ben-nghe")
      * - categories: filter by category IDs (comma-separated)
-     * - minRating: minimum rating filter
+     * - minRating: minimum rating filter (0-5)
      * - sortBy: relevance|rating|distance|popular (default: relevance)
      * - limit: results per page (default: 20)
      * - offset: pagination offset (default: 0)
+     *
+     * Examples:
+     * - Basic search: GET /api/places/search?q=cắt tóc
+     * - Location filter: GET /api/places/search?q=spa&province=ho-chi-minh&district=quan-1
+     * - Geo search: GET /api/places/search?q=massage&lat=10.7769&lng=106.7009&radius=5
+     * - Category filter: GET /api/places/search?q=beauty&categories=1,2,3
      */
     async search(ctx: Context) {
       try {
@@ -34,6 +43,9 @@ export default factories.createCoreController(
           lng,
           radius,
           city,
+          province,
+          district,
+          ward,
           categories,
           minRating,
           sortBy,
@@ -58,6 +70,9 @@ export default factories.createCoreController(
           longitude: lng ? parseFloat(String(lng)) : undefined,
           radiusKm: radius ? parseFloat(String(radius)) : undefined,
           city: city ? String(city) : undefined,
+          province: province ? String(province) : undefined,
+          district: district ? String(district) : undefined,
+          ward: ward ? String(ward) : undefined,
           categories: categoriesArray,
           minRating: minRating ? parseFloat(String(minRating)) : undefined,
           sortBy: sortBy ? (String(sortBy) as any) : 'relevance',
@@ -81,7 +96,7 @@ export default factories.createCoreController(
     },
 
     /**
-     * Search nearby places
+     * Search nearby places without text query
      * GET /api/places/nearby
      *
      * Query params:
@@ -89,8 +104,13 @@ export default factories.createCoreController(
      * - lng: longitude (required)
      * - radius: search radius in km (default: 5)
      * - categories: filter by category IDs (comma-separated)
-     * - minRating: minimum rating filter
+     * - minRating: minimum rating filter (0-5)
      * - limit: max results (default: 20)
+     *
+     * Examples:
+     * - Basic nearby: GET /api/places/nearby?lat=10.7769&lng=106.7009
+     * - With radius: GET /api/places/nearby?lat=10.7769&lng=106.7009&radius=2
+     * - With filters: GET /api/places/nearby?lat=10.7769&lng=106.7009&categories=1,2&minRating=4
      */
     async nearby(ctx: Context) {
       try {
@@ -127,6 +147,13 @@ export default factories.createCoreController(
     /**
      * Get recommendations based on a place
      * GET /api/places/:id/recommendations
+     *
+     * Query params:
+     * - limit: max recommendations (default: 10)
+     *
+     * Examples:
+     * - Basic recommendations: GET /api/places/123/recommendations
+     * - With limit: GET /api/places/123/recommendations?limit=5
      */
     async recommendations(ctx: Context) {
       try {
@@ -134,13 +161,13 @@ export default factories.createCoreController(
         const {limit} = ctx.query
 
         if (!id) {
-          return ctx.badRequest('Place ID is required')
+          return ctx.badRequest('Place document ID is required')
         }
 
         const result = await strapi
           .service('api::place.place')
           .getRecommendations(
-            parseInt(String(id)),
+            String(id),
             limit ? parseInt(String(limit)) : undefined,
           )
 
@@ -156,6 +183,12 @@ export default factories.createCoreController(
     /**
      * Sync a place to Qdrant (Admin only)
      * POST /api/places/:documentId/sync
+     *
+     * Path params:
+     * - documentId: Strapi document ID of the place
+     *
+     * Examples:
+     * - Sync specific place: POST /api/places/abc123/sync
      */
     async sync(ctx: Context) {
       try {
@@ -182,8 +215,13 @@ export default factories.createCoreController(
     /**
      * Sync all places to Qdrant (Admin only)
      * POST /api/places/sync-all
+     *
      * Query params:
      * - includeDrafts: true to include draft places (default: false)
+     *
+     * Examples:
+     * - Sync all published places: POST /api/places/sync-all
+     * - Include drafts: POST /api/places/sync-all?includeDrafts=true
      */
     async syncAll(ctx: Context) {
       try {

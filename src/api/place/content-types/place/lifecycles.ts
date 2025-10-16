@@ -19,15 +19,9 @@ export default {
     const { result } = event;
     
     try {
-      // Sync to Qdrant after creation (only if published)
-      if (result && result.documentId && result.status === 'published') {
-        strapi.log.info(`🔄 Syncing new place ${result.documentId} to Qdrant...`);
-        await (strapi.service('api::place.place') as any).syncToQdrant(
-          result.documentId
-        );
-      } else if (result && result.documentId) {
-        strapi.log.debug(`Skipping sync for draft place ${result.documentId}`);
-      }
+      await (strapi.service('api::place.place') as any).syncToQdrant(
+        result.documentId
+      );
     } catch (error) {
       strapi.log.error(`Failed to sync place ${result?.documentId} after creation:`, error);
     }
@@ -40,22 +34,11 @@ export default {
     const { result } = event;
     
     try {
-      // Re-sync to Qdrant after update
-      if (result && result.documentId) {
-        if (result.status === 'published') {
-          strapi.log.info(`🔄 Re-syncing updated place ${result.documentId} to Qdrant...`);
-          await (strapi.service('api::place.place') as any).syncToQdrant(
-            result.documentId
-          );
-        } else {
-          // If unpublished, remove from Qdrant
-          strapi.log.info(`🗑️ Removing unpublished place ${result.documentId} (ID: ${result.id}) from Qdrant...`);
-          const qdrantService = (await import('../../services/qdrant')).default;
-          await qdrantService.deletePlace(Number(result.id));
-        }
-      }
+      await (strapi.service('api::place.place') as any).syncToQdrant(
+        result.documentId
+      );
     } catch (error) {
-      strapi.log.error(`Failed to sync place ${result?.documentId} after update:`, error);
+      strapi.log.error(`Failed to sync place ${result?.documentId} after creation:`, error);
     }
   },
 
@@ -70,7 +53,7 @@ export default {
       if (result && result.id) {
         strapi.log.info(`🗑️ Removing deleted place ${result.documentId} (ID: ${result.id}) from Qdrant...`);
         const qdrantService = (await import('../../services/qdrant')).default;
-        await qdrantService.deletePlace(Number(result.id));
+        await qdrantService.deletePlace(result.documentId);
       }
     } catch (error) {
       strapi.log.error(`Failed to remove place ${result?.documentId} from Qdrant:`, error);

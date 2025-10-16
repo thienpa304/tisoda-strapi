@@ -3,32 +3,39 @@
  * Handles vector search and geo-spatial filtering for places
  */
 
-import { QdrantClient } from '@qdrant/js-client-rest';
-import embeddingService from './embedding';
+import {QdrantClient} from '@qdrant/js-client-rest'
+import {randomUUID, createHash} from 'crypto'
+import embeddingService from './embedding'
 
 interface PlaceVector {
-  id: number;
-  name: string;
-  description: string;
-  categories: string[];
-  address: string;
-  city: string;
-  latitude: number;
-  longitude: number;
-  rating: number;
-  quantitySold: number;
+  document_id: string
+  name: string
+  description: string
+  categories: string[]
+  address: string
+  city: string
+  province?: string
+  district?: string
+  ward?: string
+  latitude: number
+  longitude: number
+  rating: number
+  quantitySold: number
+  serviceNames?: string[]
+  serviceGroupNames?: string[]
+  categoryNames?: string[]
 }
 
 class QdrantService {
-  private client: QdrantClient;
-  private collectionName = (process.env.PREFIX_COLLECTION || '') + 'places';
+  private client: QdrantClient
+  private collectionName = (process.env.PREFIX_COLLECTION || '') + 'places'
 
   constructor() {
     // Initialize Qdrant client
     this.client = new QdrantClient({
       url: process.env.QDRANT_URL || 'http://localhost:6333',
       apiKey: process.env.QDRANT_API_KEY,
-    });
+    })
   }
 
   /**
@@ -37,16 +44,18 @@ class QdrantService {
   async initCollection() {
     try {
       // Initialize embedding service first
-      await embeddingService.initialize();
-      
-      const providerInfo = embeddingService.getProviderInfo();
-      strapi.log.info(`📊 Embedding: ${providerInfo.provider} (${providerInfo.model}) - ${providerInfo.dimension}D`);
+      await embeddingService.initialize()
+
+      const providerInfo = embeddingService.getProviderInfo()
+      strapi.log.info(
+        `📊 Embedding: ${providerInfo.provider} (${providerInfo.model}) - ${providerInfo.dimension}D`,
+      )
 
       // Check if collection exists
-      const collections = await this.client.getCollections();
+      const collections = await this.client.getCollections()
       const exists = collections.collections.some(
-        (col) => col.name === this.collectionName
-      );
+        (col) => col.name === this.collectionName,
+      )
 
       if (!exists) {
         // Create collection with dynamic vector size based on embedding provider
@@ -55,29 +64,44 @@ class QdrantService {
             size: providerInfo.dimension,
             distance: 'Cosine',
           },
-        });
+        })
 
         // Create payload index for faster filtering
         await this.client.createPayloadIndex(this.collectionName, {
           field_name: 'city',
           field_schema: 'keyword',
-        });
+        })
 
         await this.client.createPayloadIndex(this.collectionName, {
           field_name: 'rating',
           field_schema: 'float',
-        });
+        })
 
         await this.client.createPayloadIndex(this.collectionName, {
           field_name: 'categories',
           field_schema: 'keyword',
-        });
+        })
 
-        strapi.log.info('✅ Qdrant collection initialized successfully');
+        await this.client.createPayloadIndex(this.collectionName, {
+          field_name: 'province',
+          field_schema: 'keyword',
+        })
+
+        await this.client.createPayloadIndex(this.collectionName, {
+          field_name: 'district',
+          field_schema: 'keyword',
+        })
+
+        await this.client.createPayloadIndex(this.collectionName, {
+          field_name: 'ward',
+          field_schema: 'keyword',
+        })
+
+        strapi.log.info('✅ Qdrant collection initialized successfully')
       }
     } catch (error) {
-      strapi.log.error('❌ Failed to initialize Qdrant collection:', error);
-      throw error;
+      strapi.log.error('❌ Failed to initialize Qdrant collection:', error)
+      throw error
     }
   }
 
@@ -86,11 +110,38 @@ class QdrantService {
    */
   async generateEmbedding(text: string): Promise<number[]> {
     try {
-      return await embeddingService.generateEmbedding(text);
+      return await embeddingService.generateEmbedding(text)
     } catch (error: any) {
-      strapi.log.error('Failed to generate embedding:', error?.message || error);
-      throw error;
+      strapi.log.error('Failed to generate embedding:', error?.message || error)
+      throw error
     }
+  }
+
+  /**
+   * Convert string to UUID format using deterministic hashing
+   */
+  private ensureValidUUID(documentId: string): string {
+    // Check if it's already a valid UUID format
+    const uuidRegex =
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
+    if (uuidRegex.test(documentId)) {
+      return documentId
+    }
+
+    // Convert string to UUID format using MD5 hash
+    const hash = createHash('md5').update(documentId).digest('hex')
+    const uuid = [
+      hash.substring(0, 8),
+      hash.substring(8, 12),
+      hash.substring(12, 16),
+      hash.substring(16, 20),
+      hash.substring(20, 32),
+    ].join('-')
+
+    strapi.log.info(
+      `Converted document ID "${documentId}" to UUID format: ${uuid}`,
+    )
+    return uuid
   }
 
   /**
@@ -100,12 +151,18 @@ class QdrantService {
     const parts = [
       place.name,
       place.description,
+      place.serviceNames?.join(' '),
+      place.serviceGroupNames?.join(' '),
+      place.categoryNames?.join(' '),
       place.address,
       place.city,
+      place.province,
+      place.district,
+      place.ward,
       place.categories.join(' '),
-    ].filter(Boolean);
+    ].filter(Boolean)
 
-    return parts.join(' ');
+    return parts.join(' ')
   }
 
   /**
@@ -113,54 +170,66 @@ class QdrantService {
    */
   async upsertPlace(place: PlaceVector) {
     try {
-      const searchText = this.createSearchText(place);
-      const embedding = await this.generateEmbedding(searchText);
+      const searchText = this.createSearchText(place)
+      const embedding = await this.generateEmbedding(searchText)
+
+      // Ensure document_id is a valid UUID
+      const validUUID = this.ensureValidUUID(place.document_id)
 
       await this.client.upsert(this.collectionName, {
         wait: true,
         points: [
           {
-            id: place.id,
+            id: validUUID,
             vector: embedding,
             payload: {
-              id: place.id,
+              documentId: place.document_id,
               name: place.name,
               description: place.description,
               categories: place.categories,
               address: place.address,
               city: place.city,
+              province: place.province || '',
+              district: place.district || '',
+              ward: place.ward || '',
               location: {
                 lat: place.latitude,
                 lon: place.longitude,
               },
               rating: place.rating,
               quantitySold: place.quantitySold,
+              serviceNames: place.serviceNames || [],
+              serviceGroupNames: place.serviceGroupNames || [],
+              categoryNames: place.categoryNames || [],
             },
           },
         ],
-      });
+      })
 
-      strapi.log.info(`✅ Place ${place.id} indexed in Qdrant`);
+      strapi.log.info(`✅ Place ${place.document_id} indexed in Qdrant`)
     } catch (error) {
-      strapi.log.error(`Failed to upsert place ${place.id}:`, error);
-      throw error;
+      strapi.log.error(`Failed to upsert place ${place.document_id}:`, error)
+      throw error
     }
   }
 
   /**
    * Delete place from Qdrant
    */
-  async deletePlace(placeId: number) {
+  async deletePlace(documentId: string) {
     try {
+      // Ensure document_id is a valid UUID
+      const validUUID = this.ensureValidUUID(documentId)
+
       await this.client.delete(this.collectionName, {
         wait: true,
-        points: [placeId],
-      });
+        points: [validUUID],
+      })
 
-      strapi.log.info(`✅ Place ${placeId} deleted from Qdrant`);
+      strapi.log.info(`✅ Place ${validUUID} deleted from Qdrant`)
     } catch (error) {
-      strapi.log.error(`Failed to delete place ${placeId}:`, error);
-      throw error;
+      strapi.log.error(`Failed to delete place ${documentId}:`, error)
+      throw error
     }
   }
 
@@ -168,37 +237,37 @@ class QdrantService {
    * Calculate text similarity for exact/partial matching
    */
   private calculateTextSimilarity(query: string, text: string): number {
-    const queryLower = query.toLowerCase().trim();
-    const textLower = text.toLowerCase().trim();
+    const queryLower = query.toLowerCase().trim()
+    const textLower = text.toLowerCase().trim()
 
     // Exact match - highest boost
     if (textLower === queryLower) {
-      return 1.0;
+      return 1.0
     }
 
     // Starts with query - high boost
     if (textLower.startsWith(queryLower)) {
-      return 0.8;
+      return 0.8
     }
 
     // Contains query - medium boost
     if (textLower.includes(queryLower)) {
-      return 0.6;
+      return 0.6
     }
 
     // Check for word matches
-    const queryWords = queryLower.split(/\s+/);
-    const textWords = textLower.split(/\s+/);
-    
-    const matchingWords = queryWords.filter(qw => 
-      textWords.some(tw => tw.includes(qw) || qw.includes(tw))
-    );
-    
+    const queryWords = queryLower.split(/\s+/)
+    const textWords = textLower.split(/\s+/)
+
+    const matchingWords = queryWords.filter((qw) =>
+      textWords.some((tw) => tw.includes(qw) || qw.includes(tw)),
+    )
+
     if (matchingWords.length > 0) {
-      return 0.4 * (matchingWords.length / queryWords.length);
+      return 0.4 * (matchingWords.length / queryWords.length)
     }
 
-    return 0;
+    return 0
   }
 
   /**
@@ -206,15 +275,18 @@ class QdrantService {
    * Enhanced with hybrid search: combines semantic similarity with exact match boosting
    */
   async searchPlaces(params: {
-    query: string;
-    latitude?: number;
-    longitude?: number;
-    radiusKm?: number;
-    city?: string;
-    categories?: string[];
-    minRating?: number;
-    limit?: number;
-    offset?: number;
+    query: string
+    latitude?: number
+    longitude?: number
+    radiusKm?: number
+    city?: string
+    province?: string
+    district?: string
+    ward?: string
+    categories?: string[]
+    minRating?: number
+    limit?: number
+    offset?: number
   }) {
     try {
       const {
@@ -223,19 +295,22 @@ class QdrantService {
         longitude,
         radiusKm = 10,
         city,
+        province,
+        district,
+        ward,
         categories,
         minRating,
         limit = 20,
         offset = 0,
-      } = params;
+      } = params
 
       // Generate query embedding
-      const queryEmbedding = await this.generateEmbedding(query);
+      const queryEmbedding = await this.generateEmbedding(query)
 
       // Build filter conditions
       const filter: any = {
         must: [],
-      };
+      }
 
       // Geo-spatial filter
       if (latitude && longitude) {
@@ -248,7 +323,7 @@ class QdrantService {
             },
             radius: radiusKm * 1000, // Convert km to meters
           },
-        });
+        })
       }
 
       // City filter
@@ -258,7 +333,37 @@ class QdrantService {
           match: {
             value: city,
           },
-        });
+        })
+      }
+
+      // Province filter
+      if (province) {
+        filter.must.push({
+          key: 'province',
+          match: {
+            value: province,
+          },
+        })
+      }
+
+      // District filter
+      if (district) {
+        filter.must.push({
+          key: 'district',
+          match: {
+            value: district,
+          },
+        })
+      }
+
+      // Ward filter
+      if (ward) {
+        filter.must.push({
+          key: 'ward',
+          match: {
+            value: ward,
+          },
+        })
       }
 
       // Categories filter
@@ -268,7 +373,7 @@ class QdrantService {
           match: {
             any: categories,
           },
-        });
+        })
       }
 
       // Rating filter
@@ -278,7 +383,7 @@ class QdrantService {
           range: {
             gte: minRating,
           },
-        });
+        })
       }
 
       // Perform vector search - get more results for re-ranking
@@ -288,7 +393,7 @@ class QdrantService {
         limit: limit * 3, // Get 3x results for re-ranking
         offset,
         with_payload: true,
-      });
+      })
 
       // Hybrid scoring: Combine vector similarity with exact match boosting
       const rerankedResults = searchResult.map((result) => {
@@ -318,12 +423,12 @@ class QdrantService {
       // Sort by hybrid score and return top results
       const sortedResults = rerankedResults
         .sort((a, b) => b.score - a.score)
-        .slice(0, limit);
+        .slice(0, limit)
 
-      return sortedResults;
+      return sortedResults
     } catch (error) {
-      strapi.log.error('Failed to search places:', error);
-      throw error;
+      strapi.log.error('Failed to search places:', error)
+      throw error
     }
   }
 
@@ -331,12 +436,12 @@ class QdrantService {
    * Search nearby places without text query
    */
   async searchNearby(params: {
-    latitude: number;
-    longitude: number;
-    radiusKm?: number;
-    categories?: string[];
-    minRating?: number;
-    limit?: number;
+    latitude: number
+    longitude: number
+    radiusKm?: number
+    categories?: string[]
+    minRating?: number
+    limit?: number
   }) {
     try {
       const {
@@ -346,7 +451,7 @@ class QdrantService {
         categories,
         minRating,
         limit = 20,
-      } = params;
+      } = params
 
       // Build filter
       const filter: any = {
@@ -362,7 +467,7 @@ class QdrantService {
             },
           },
         ],
-      };
+      }
 
       if (categories && categories.length > 0) {
         filter.must.push({
@@ -370,7 +475,7 @@ class QdrantService {
           match: {
             any: categories,
           },
-        });
+        })
       }
 
       if (minRating) {
@@ -379,7 +484,7 @@ class QdrantService {
           range: {
             gte: minRating,
           },
-        });
+        })
       }
 
       // Scroll through points with geo filter
@@ -388,57 +493,57 @@ class QdrantService {
         limit,
         with_payload: true,
         with_vector: false,
-      });
+      })
 
       return result.points.map((point) => ({
-        id: point.id,
         ...point.payload,
-      }));
+      }))
     } catch (error) {
-      strapi.log.error('Failed to search nearby places:', error);
-      throw error;
+      strapi.log.error('Failed to search nearby places:', error)
+      throw error
     }
   }
 
   /**
    * Get recommendations based on a place
    */
-  async getRecommendations(placeId: number, limit: number = 10) {
+  async getRecommendations(documentId: string, limit: number = 10) {
     try {
+      // Ensure document_id is a valid UUID
+      const validUUID = this.ensureValidUUID(documentId)
+
       // Get the vector of the reference place
       const place = await this.client.retrieve(this.collectionName, {
-        ids: [placeId],
+        ids: [validUUID],
         with_vector: true,
-      });
+      })
 
       if (!place || place.length === 0) {
-        throw new Error('Place not found in Qdrant');
+        throw new Error('Place not found in Qdrant')
       }
 
-      const vector = place[0].vector as number[];
+      const vector = place[0].vector as number[]
 
       // Find similar places
       const recommendations = await this.client.search(this.collectionName, {
         vector,
         limit: limit + 1, // +1 to exclude the reference place itself
         with_payload: true,
-      });
+      })
 
       // Filter out the reference place
       return recommendations
-        .filter((rec) => rec.id !== placeId)
+        .filter((rec) => rec.id !== validUUID)
         .slice(0, limit)
         .map((result) => ({
-          id: result.id,
           score: result.score,
           ...result.payload,
-        }));
+        }))
     } catch (error) {
-      strapi.log.error('Failed to get recommendations:', error);
-      throw error;
+      strapi.log.error('Failed to get recommendations:', error)
+      throw error
     }
   }
 }
 
-export default new QdrantService();
-
+export default new QdrantService()

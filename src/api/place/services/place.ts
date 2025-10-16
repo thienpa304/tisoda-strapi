@@ -13,6 +13,9 @@ interface SearchParams {
   longitude?: number
   radiusKm?: number
   city?: string
+  province?: string
+  district?: string
+  ward?: string
   categories?: string[]
   minRating?: number
   sortBy?: 'relevance' | 'rating' | 'distance' | 'popular'
@@ -51,6 +54,9 @@ export default factories.createCoreService(
           longitude,
           radiusKm = 10,
           city,
+          province,
+          district,
+          ward,
           categories,
           minRating,
           sortBy = 'relevance',
@@ -66,23 +72,30 @@ export default factories.createCoreService(
           longitude,
           radiusKm,
           city,
+          province,
+          district,
+          ward,
           categories,
           minRating,
           limit: (limit + offset) * 2, // Get enough results for sorting and pagination
           offset: 0,
         })
 
+        strapi.log.info(`🔍 Qdrant search results: ${results.length} places found for query: "${query}"`)
+
         // Get full place details from Strapi
-        const placeIds = results.map((r) => Number(r.id))
+        const placeIds = results.map((r) => String(r.documentId))
 
         if (placeIds.length === 0) {
+          strapi.log.warn(`⚠️ No places found in Qdrant for query: "${query}"`)
           return {data: [], meta: {total: 0, limit, offset, sortBy}}
         }
-        console.log(placeIds)
+        
+        strapi.log.info(`📍 Found place IDs: ${placeIds.join(', ')}`)
 
         const places = await strapi.documents('api::place.place').findMany({
           filters: {
-            id: {
+            documentId: {
               $in: placeIds,
             },
           },
@@ -98,7 +111,18 @@ export default factories.createCoreService(
               fields: [], // Don't include any fields from general_info itself
               populate: {
                 address: {
-                  fields: ['latitude', 'longitude'],
+                  fields: ['address', 'latitude', 'longitude'],
+                  populate: {
+                    province: {
+                      fields: ['name', 'codename'],
+                    },
+                    district: {
+                      fields: ['name', 'codename'],
+                    },
+                    ward: {
+                      fields: ['name', 'codename'],
+                    },
+                  },
                 },
                 rating: {
                   fields: ['score', 'review_count'],
@@ -127,7 +151,7 @@ export default factories.createCoreService(
 
         // Map results with scores
         const placesWithScore: PlaceWithScore[] = places.map((place: any) => {
-          const result = results.find((r) => Number(r.id) === place.id)
+          const result = results.find((r) => r.document_id === place.documentId)
           return {
             ...place,
             searchScore: result?.score || 0,
@@ -193,7 +217,7 @@ export default factories.createCoreService(
       try {
         const results = await qdrantService.searchNearby(params)
 
-        const placeIds = results.map((r) => Number(r.id))
+        const placeIds = results.map((r) => String(r.documentId))
 
         if (placeIds.length === 0) {
           return {data: [], meta: {total: 0}}
@@ -201,7 +225,7 @@ export default factories.createCoreService(
 
         const places = await strapi.documents('api::place.place').findMany({
           filters: {
-            id: {
+            documentId: {
               $in: placeIds,
             },
           },
@@ -218,7 +242,18 @@ export default factories.createCoreService(
               fields: [], // Don't include any fields from general_info itself
               populate: {
                 address: {
-                  fields: ['latitude', 'longitude'],
+                  fields: ['address', 'latitude', 'longitude'],
+                  populate: {
+                    province: {
+                      fields: ['name', 'codename'],
+                    },
+                    district: {
+                      fields: ['name', 'codename'],
+                    },
+                    ward: {
+                      fields: ['name', 'codename'],
+                    },
+                  },
                 },
                 rating: {
                   fields: ['score', 'review_count'],
@@ -249,11 +284,11 @@ export default factories.createCoreService(
     /**
      * Get place recommendations based on similarity
      */
-    async getRecommendations(placeId: number, limit: number = 10) {
+    async getRecommendations(documentId: string, limit: number = 10) {
       try {
-        const results = await qdrantService.getRecommendations(placeId, limit)
+        const results = await qdrantService.getRecommendations(documentId, limit)
 
-        const placeIds = results.map((r) => Number(r.id))
+        const placeIds = results.map((r: any) => String(r.documentId))
 
         if (placeIds.length === 0) {
           return {data: [], meta: {total: 0}}
@@ -261,7 +296,7 @@ export default factories.createCoreService(
 
         const places = await strapi.documents('api::place.place').findMany({
           filters: {
-            id: {
+            documentId: {
               $in: placeIds,
             },
           },
@@ -269,7 +304,7 @@ export default factories.createCoreService(
         })
 
         strapi.log.debug(
-          `Found ${places.length} recommendations for place ${placeId}`,
+          `Found ${places.length} recommendations for place ${documentId}`,
         )
 
         return {
@@ -323,25 +358,55 @@ export default factories.createCoreService(
             },
             general_info: {
               populate: {
-                address: true,
+                address: {
+                  populate: {
+                    province: { fields: ['name', 'codename'] },
+                    district: { fields: ['name', 'codename'] },
+                    ward: { fields: ['name', 'codename'] },
+                  },
+                },
                 rating: true,
               },
+            },
+            services: {
+              fields: ['service_name', 'service_group_name'],
             },
           },
           status: 'published',
         })
 
         if (!place) {
-          throw new Error(`Place ${placeDocumentId} not found`)
+          await qdrantService.deletePlace(placeDocumentId)
+          return
         }
         strapi.log.info(`place id: ${place.id}`)
         // Extract categories - use slug for better API compatibility
         const categories =
           place.category_places?.map((cat: any) => cat.slug || cat.name) || []
 
+        // Extract service data
+        const serviceNames: string[] = (place.services || [])
+          .map((s: any) => s.service_name)
+          .filter((name: any) => name && typeof name === 'string') as string[]
+        
+        const serviceGroupNames: string[] = [...new Set(
+          (place.services || [])
+            .map((s: any) => s.service_group_name)
+            .filter((name: any) => name && typeof name === 'string')
+        )] as string[]
+        
+        const categoryNames: string[] = (place.category_places || [])
+          .map((c: any) => c.name)
+          .filter((name: any) => name && typeof name === 'string') as string[]
+
+        // Extract location data
+        const province = place.general_info?.address?.province?.codename || ''
+        const district = place.general_info?.address?.district?.codename || ''
+        const ward = place.general_info?.address?.ward?.codename || ''
+
         // Prepare data for Qdrant
         const placeVector = {
-          id: Number(place.id),
+          document_id: place.documentId,
           name: place.name || '',
           description: place.service_group_description
             ? JSON.stringify(place.service_group_description)
@@ -349,10 +414,16 @@ export default factories.createCoreService(
           categories,
           address: place.general_info?.address?.address || '',
           city: place.general_info?.address?.city || '',
+          province,
+          district,
+          ward,
           latitude: Number(place.general_info?.address?.latitude) || 0,
           longitude: Number(place.general_info?.address?.longitude) || 0,
           rating: Number(place.general_info?.rating?.score) || 0,
           quantitySold: place.quantity_sold || 0,
+          serviceNames,
+          serviceGroupNames,
+          categoryNames,
         }
 
         await qdrantService.upsertPlace(placeVector)
