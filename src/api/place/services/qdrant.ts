@@ -21,7 +21,7 @@ interface PlaceVector {
 
 class QdrantService {
   private client: QdrantClient;
-  private collectionName = 'places';
+  private collectionName = (process.env.PREFIX_COLLECTION || '') + 'places';
 
   constructor() {
     // Initialize Qdrant client
