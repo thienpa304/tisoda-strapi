@@ -8,7 +8,7 @@ import qdrantService from './qdrant'
 
 // Type definitions for better type safety
 interface SearchParams {
-  query: string
+  query?: string
   latitude?: number
   longitude?: number
   radiusKm?: number

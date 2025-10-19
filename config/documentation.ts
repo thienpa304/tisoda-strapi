@@ -11,7 +11,7 @@ export const customRoutesDocs = (generatedDocumentation: any) => {
       summary: 'Search places',
       description: 'Search places with text query, geo-spatial filtering, location filtering (province/district/ward), and sorting. Supports hybrid search combining semantic similarity with exact match boosting for services and locations.',
       parameters: [
-        { name: 'q', in: 'query', description: 'Search query (required)', required: true, schema: { type: 'string' } },
+        { name: 'q', in: 'query', description: 'Search query', required: false, schema: { type: 'string' } },
         { name: 'lat', in: 'query', description: 'Latitude for geo-spatial search', required: false, schema: { type: 'number' } },
         { name: 'lng', in: 'query', description: 'Longitude for geo-spatial search', required: false, schema: { type: 'number' } },
         { name: 'radius', in: 'query', description: 'Search radius in kilometers (default: 10)', required: false, schema: { type: 'number', default: 10 } },

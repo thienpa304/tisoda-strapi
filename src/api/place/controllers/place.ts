@@ -53,11 +53,6 @@ export default factories.createCoreController(
           offset,
         } = ctx.query
 
-        // Validate required params
-        if (!q) {
-          return ctx.badRequest('Search query (q) is required')
-        }
-
         // Parse categories if provided
         const categoriesArray = categories
           ? String(categories).split(',').filter(Boolean)
@@ -65,7 +60,7 @@ export default factories.createCoreController(
 
         // Call service method
         const result = await strapi.service('api::place.place').search({
-          query: String(q),
+          query: q ? String(q) : undefined,
           latitude: lat ? parseFloat(String(lat)) : undefined,
           longitude: lng ? parseFloat(String(lng)) : undefined,
           radiusKm: radius ? parseFloat(String(radius)) : undefined,
@@ -83,14 +78,19 @@ export default factories.createCoreController(
         ctx.body = result
       } catch (error: any) {
         strapi.log.error('Search controller error:', error)
-        
+
         // Handle OpenAI quota errors specifically
         if (error.message?.includes('OpenAI API quota exceeded')) {
-          return ctx.throw(503, 'Search service temporarily unavailable. OpenAI API quota exceeded.', {
-            details: 'The AI search service has reached its usage limit. Please try again later or contact support.',
-          })
+          return ctx.throw(
+            503,
+            'Search service temporarily unavailable. OpenAI API quota exceeded.',
+            {
+              details:
+                'The AI search service has reached its usage limit. Please try again later or contact support.',
+            },
+          )
         }
-        
+
         ctx.throw(500, 'Search failed', {details: error.message})
       }
     },

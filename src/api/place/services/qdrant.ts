@@ -244,7 +244,7 @@ class QdrantService {
    * Enhanced with hybrid search: combines semantic similarity with exact match boosting
    */
   async searchPlaces(params: {
-    query: string
+    query?: string
     latitude?: number
     longitude?: number
     radiusKm?: number
@@ -272,9 +272,6 @@ class QdrantService {
         limit = 20,
         offset = 0,
       } = params
-
-      // Generate query embedding
-      const queryEmbedding = await this.generateEmbedding(query)
 
       // Build filter conditions
       const filter: any = {
@@ -354,6 +351,25 @@ class QdrantService {
           },
         })
       }
+
+      // If no query provided, use scroll method for filtering only
+      if (!query) {
+        const result = await this.client.scroll(this.collectionName, {
+          filter: filter.must.length > 0 ? filter : undefined,
+          limit,
+          offset,
+          with_payload: true,
+          with_vector: false,
+        })
+
+        return result.points.map((point) => ({
+          ...point.payload,
+          score: 0, // No relevance score when no query
+        }))
+      }
+
+      // Generate query embedding and perform vector search
+      const queryEmbedding = await this.generateEmbedding(query)
 
       // Perform vector search - get more results for re-ranking
       const searchResult = await this.client.search(this.collectionName, {
