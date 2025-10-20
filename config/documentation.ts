@@ -9,7 +9,7 @@ export const customRoutesDocs = (generatedDocumentation: any) => {
     get: {
       tags: ['Place'],
       summary: 'Search places',
-      description: 'Search places with text query, geo-spatial filtering, location filtering (province/district/ward), and sorting. Supports hybrid search combining semantic similarity with exact match boosting for services and locations.',
+      description: 'Search places with text query, geo-spatial filtering, location filtering (province/district/ward), and sorting. Uses Meilisearch for fast keyword-based search with Vietnamese text support.',
       parameters: [
         { name: 'q', in: 'query', description: 'Search query', required: false, schema: { type: 'string' } },
         { name: 'lat', in: 'query', description: 'Latitude for geo-spatial search', required: false, schema: { type: 'number' } },
@@ -249,6 +249,40 @@ export const customRoutesDocs = (generatedDocumentation: any) => {
                   message: { type: 'string' },
                   synced: { type: 'number' },
                   failed: { type: 'number' },
+                  total: { type: 'number' },
+                },
+              },
+            },
+          },
+        },
+        401: {
+          description: 'Unauthorized - Admin authentication required',
+        },
+        500: {
+          description: 'Sync failed - Internal server error',
+        },
+      },
+      security: [{ bearerAuth: [] }],
+    },
+  };
+
+  // Sync all places to Meilisearch endpoint
+  generatedDocumentation.paths['/places/sync-meili'] = {
+    post: {
+      tags: ['Place'],
+      summary: 'Sync all places to Meilisearch',
+      description: 'Sync all published places to Meilisearch for fast keyword-based search with Vietnamese text support (Admin only)',
+      responses: {
+        200: {
+          description: 'All places successfully synced to Meilisearch',
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: {
+                  success: { type: 'boolean' },
+                  message: { type: 'string' },
+                  synced: { type: 'number' },
                   total: { type: 'number' },
                 },
               },

@@ -257,5 +257,102 @@ export default factories.createCoreController(
         ctx.throw(500, 'Sync all failed', {details: error.message})
       }
     },
+
+    /**
+     * Sync all places to Meilisearch (Admin only)
+     * POST /api/places/sync-meili
+     *
+     * Examples:
+     * - Sync all published places: POST /api/places/sync-meili
+     */
+    async syncMeili(ctx: Context) {
+      try {
+        const places = await strapi.documents('api::place.place').findMany({
+          status: 'published',
+          populate: {
+            category_places: {fields: ['name', 'slug']},
+            general_info: {
+              populate: {
+                address: {
+                  populate: {
+                    province: {fields: ['codename']},
+                    district: {fields: ['codename']},
+                    ward: {fields: ['codename']},
+                  },
+                },
+                rating: true,
+              },
+            },
+            services: {fields: ['service_name', 'service_group_name']},
+          },
+        })
+
+        const meiliService = strapi.service('api::place.meili')
+        await meiliService.initIndex()
+
+        const docs = places.map((p: any) => {
+          const categories = (p.category_places || []).map((c: any) => c.slug || c.name)
+          const serviceNames = [
+            ...new Set(
+              (p.services || [])
+                .map((s: any) => s.service_name)
+                .filter((x: any) => x && typeof x === 'string')
+                .map((x: string) => x.trim()),
+            ),
+          ]
+          const serviceGroupNames = [
+            ...new Set(
+              (p.services || [])
+                .map((s: any) => s.service_group_name)
+                .filter((x: any) => x && typeof x === 'string')
+                .map((x: string) => x.trim()),
+            ),
+          ]
+          const categoryNames = (p.category_places || [])
+            .map((c: any) => c.name)
+            .filter((x: any) => x && typeof x === 'string')
+
+          return {
+            documentId: p.documentId,
+            name: p.name || '',
+            description: p.service_group_description
+              ? JSON.stringify(p.service_group_description)
+              : '',
+            serviceNames,
+            serviceGroupNames,
+            categoryNames,
+            categories,
+            address: p.general_info?.address?.address || '',
+            city: p.general_info?.address?.city || '',
+            province: p.general_info?.address?.province?.codename || '',
+            district: p.general_info?.address?.district?.codename || '',
+            ward: p.general_info?.address?.ward?.codename || '',
+            location: {
+              lat: Number(p.general_info?.address?.latitude) || 0,
+              lon: Number(p.general_info?.address?.longitude) || 0,
+            },
+            rating: Number(p.general_info?.rating?.score) || 0,
+            quantitySold: p.quantity_sold || 0,
+          }
+        })
+
+        // Batch in chunks
+        const chunkSize = 1000
+        for (let i = 0; i < docs.length; i += chunkSize) {
+          const chunk = docs.slice(i, i + chunkSize)
+          await meiliService.upsertPlaces(chunk as any)
+        }
+
+        ctx.body = {
+          success: true,
+          message: `Synced ${docs.length} places to Meilisearch`,
+          synced: docs.length,
+          total: places.length,
+        }
+      } catch (error: any) {
+        strapi.log.error('Sync Meili controller error:', error)
+        ctx.throw(500, 'Sync Meili failed', {details: error.message})
+      }
+    },
   }),
 )

@@ -1,63 +1,40 @@
 /**
- * Place lifecycle hooks
- * Automatically sync data with Qdrant when places are created, updated, or deleted
+ * Place content type lifecycles
+ * Auto-sync to Meilisearch when places are created, updated, or deleted
  */
 
-import type { Core } from '@strapi/strapi';
-
-interface LifecycleEvent {
-  params?: any;
-  result?: any;
-  state?: any;
-}
-
 export default {
-  /**
-   * After a place is created
-   */
-  async afterCreate(event: LifecycleEvent) {
-    const { result } = event;
-    
+  async afterCreate(event: any) {
+    const { result } = event
     try {
-      await (strapi.service('api::place.place') as any).syncToQdrant(
-        result.documentId
-      );
+      // Sync to Meilisearch
+      await strapi.service('api::place.place').syncToMeili(result.documentId)
+      strapi.log.info(`✅ Place ${result.documentId} synced to Meilisearch after create`)
     } catch (error) {
-      strapi.log.error(`Failed to sync place ${result?.documentId} after creation:`, error);
+      strapi.log.error(`Failed to sync place ${result.documentId} to Meilisearch:`, error)
     }
   },
 
-  /**
-   * After a place is updated
-   */
-  async afterUpdate(event: LifecycleEvent) {
-    const { result } = event;
-    
+  async afterUpdate(event: any) {
+    const { result } = event
     try {
-      await (strapi.service('api::place.place') as any).syncToQdrant(
-        result.documentId
-      );
+      // Sync to Meilisearch
+      await strapi.service('api::place.place').syncToMeili(result.documentId)
+      strapi.log.info(`✅ Place ${result.documentId} synced to Meilisearch after update`)
     } catch (error) {
-      strapi.log.error(`Failed to sync place ${result?.documentId} after creation:`, error);
+      strapi.log.error(`Failed to sync place ${result.documentId} to Meilisearch:`, error)
     }
   },
 
-  /**
-   * After a place is deleted
-   */
-  async afterDelete(event: LifecycleEvent) {
-    const { result } = event;
-    
+  async afterDelete(event: any) {
+    const { result } = event
     try {
-      // Remove from Qdrant after deletion (need numeric ID for Qdrant)
-      if (result && result.id) {
-        strapi.log.info(`🗑️ Removing deleted place ${result.documentId} (ID: ${result.id}) from Qdrant...`);
-        const qdrantService = (await import('../../services/qdrant')).default;
-        await qdrantService.deletePlace(result.documentId);
-      }
+      // Delete from Meilisearch
+      const meiliService = strapi.service('api::place.meili')
+      await meiliService.deletePlace(result.documentId)
+      strapi.log.info(`✅ Place ${result.documentId} deleted from Meilisearch`)
     } catch (error) {
-      strapi.log.error(`Failed to remove place ${result?.documentId} from Qdrant:`, error);
+      strapi.log.error(`Failed to delete place ${result.documentId} from Meilisearch:`, error)
     }
   },
-};
-
+}

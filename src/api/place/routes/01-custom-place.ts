@@ -53,6 +53,15 @@ export default {
         middlewares: [],
       },
     },
+    {
+      method: 'POST',
+      path: '/places/sync-meili',
+      handler: 'api::place.place.syncMeili',
+      config: {
+        policies: [],
+        middlewares: [],
+      },
+    },
   ],
 };
 

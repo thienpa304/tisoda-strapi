@@ -5,6 +5,7 @@
 import {factories} from '@strapi/strapi'
 import type {Core} from '@strapi/strapi'
 import qdrantService from './qdrant'
+import meiliService from './meili'
 
 // Type definitions for better type safety
 interface SearchParams {
@@ -64,32 +65,34 @@ export default factories.createCoreService(
           offset = 0,
         } = params
 
-        // Perform vector search with Qdrant
-        // Note: We don't use offset here because we need to sort first
-        const results = await qdrantService.searchPlaces({
+        // Perform keyword search with Meilisearch
+        const meiliSort =
+          sortBy === 'rating' ? 'rating' : sortBy === 'popular' ? 'popular' : undefined
+        const meiliResult = await meiliService.search({
           query,
-          latitude,
-          longitude,
-          radiusKm,
-          city,
+          categories,
           province,
           district,
           ward,
-          categories,
           minRating,
-          limit: (limit + offset) * 2, // Get enough results for sorting and pagination
+          limit: limit * 3, // Get more results for filtering and sorting
           offset: 0,
+          sortBy: meiliSort as any,
+          sortOrder: 'desc',
         })
 
+        const hits = meiliResult.hits || []
+        const totalHits = meiliResult.totalHits || hits.length
+
         strapi.log.info(
-          `🔍 Qdrant search results: ${results.length} places found for query: "${query}"`,
+          `🔍 Meilisearch results: ${hits.length} places found for query: "${query}" (total: ${totalHits})`,
         )
 
         // Get full place details from Strapi
-        const placeIds = results.map((r: any) => String(r.documentId))
+        const placeIds = hits.map((r: any) => String(r.documentId))
 
         if (placeIds.length === 0) {
-          strapi.log.warn(`⚠️ No places found in Qdrant for query: "${query}"`)
+          strapi.log.warn(`⚠️ No places found in Meilisearch for query: "${query}"`)
           return {data: [], meta: {total: 0, limit, offset, sortBy}}
         }
 
@@ -151,14 +154,12 @@ export default factories.createCoreService(
           `Found ${places.length} places matching search criteria`,
         )
 
-        // Map results with scores
+        // Map results with scores (Meili has no numeric score exposed by default)
         const placesWithScore: PlaceWithScore[] = places.map((place: any) => {
-          const result = results.find(
-            (r: any) => r.documentId === place.documentId,
-          )
+          const hit = hits.find((r: any) => r.documentId === place.documentId)
           return {
             ...place,
-            searchScore: result?.score || 0,
+            searchScore: 1, // treat Meili top results as high relevance
             distance: this.calculateDistance(
               latitude,
               longitude,
@@ -202,7 +203,7 @@ export default factories.createCoreService(
         return {
           data: paginatedResults,
           meta: {
-            total: sortedPlaces.length,
+            total: totalHits, // Use total from Meilisearch
             limit,
             offset,
             sortBy,
@@ -350,6 +351,105 @@ export default factories.createCoreService(
 
     toRad(degrees: number): number {
       return degrees * (Math.PI / 180)
+    },
+
+    /**
+     * Sync place to Meilisearch
+     */
+    async syncToMeili(placeDocumentId: string) {
+      try {
+        const place: any = await strapi.documents('api::place.place').findOne({
+          documentId: placeDocumentId,
+          populate: {
+            category_places: {
+              fields: ['name', 'slug'],
+            },
+            general_info: {
+              populate: {
+                address: {
+                  populate: {
+                    province: {fields: ['codename']},
+                    district: {fields: ['codename']},
+                    ward: {fields: ['codename']},
+                  },
+                },
+                rating: true,
+              },
+            },
+            services: {
+              fields: ['service_name', 'service_group_name'],
+            },
+          },
+          status: 'published',
+        })
+
+        if (!place) {
+          // If place not found or not published, delete from Meili
+          const meiliService = strapi.service('api::place.meili')
+          await meiliService.deletePlace(placeDocumentId)
+          return
+        }
+
+        const meiliService = strapi.service('api::place.meili')
+        await meiliService.initIndex()
+
+        // Map to Meili document format
+        const categories = (place.category_places || []).map((c: any) => c.slug || c.name)
+        const serviceNames = [
+          ...new Set(
+            (place.services || [])
+              .map((s: any) => s.service_name)
+              .filter((x: any) => x && typeof x === 'string')
+              .map((x: string) => x.trim()),
+          ),
+        ]
+        const serviceGroupNames = [
+          ...new Set(
+            (place.services || [])
+              .map((s: any) => s.service_group_name)
+              .filter((x: any) => x && typeof x === 'string')
+              .map((x: string) => x.trim()),
+          ),
+        ]
+        const categoryNames = (place.category_places || [])
+          .map((c: any) => c.name)
+          .filter((x: any) => x && typeof x === 'string')
+
+        const doc = {
+          documentId: place.documentId,
+          name: place.name || '',
+          description: place.service_group_description
+            ? JSON.stringify(place.service_group_description)
+            : '',
+          serviceNames,
+          serviceGroupNames,
+          categoryNames,
+          categories,
+          address: place.general_info?.address?.address || '',
+          city: place.general_info?.address?.city || '',
+          province: place.general_info?.address?.province?.codename || '',
+          district: place.general_info?.address?.district?.codename || '',
+          ward: place.general_info?.address?.ward?.codename || '',
+          location: {
+            lat: Number(place.general_info?.address?.latitude) || 0,
+            lon: Number(place.general_info?.address?.longitude) || 0,
+          },
+          rating: Number(place.general_info?.rating?.score) || 0,
+          quantitySold: place.quantity_sold || 0,
+        }
+
+        await meiliService.upsertPlace(doc as any)
+
+        strapi.log.info(
+          `✅ Place ${placeDocumentId} synced to Meilisearch with services: [${serviceNames.join(', ')}]`,
+        )
+      } catch (error) {
+        strapi.log.error(
+          `Failed to sync place ${placeDocumentId} to Meilisearch:`,
+          error,
+        )
+        throw error
+      }
     },
 
     /**
