@@ -383,6 +383,7 @@ export default factories.createCoreService(
           // If place not found or not published, delete from Meili
           const meiliService = strapi.service('api::place.meili')
           await meiliService.deletePlace(placeDocumentId)
+          strapi.log.info(`❌ Place ${placeDocumentId} deleted from Meilisearch`)
           return
         }
 

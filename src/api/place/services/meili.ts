@@ -20,7 +20,7 @@ interface MeiliPlaceDoc {
 
 const MEILI_HOST = process.env.MEILI_HOST || 'http://127.0.0.1:7700'
 const MEILI_API_KEY = process.env.MEILI_API_KEY || ''
-const MEILI_INDEX = process.env.PREFIX_COLLECTION || '' + 'places'
+const MEILI_INDEX = (process.env.PREFIX_COLLECTION || '') + 'places'
 
 class MeiliService {
   private client: MeiliSearch
