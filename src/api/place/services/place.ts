@@ -4,7 +4,6 @@
 
 import {factories} from '@strapi/strapi'
 import type {Core} from '@strapi/strapi'
-import qdrantService from './qdrant'
 import meiliService from './meili'
 
 // Type definitions for better type safety
@@ -220,9 +219,8 @@ export default factories.createCoreService(
      */
     async searchNearby(params: NearbySearchParams) {
       try {
-        const results = await qdrantService.searchNearby(params)
-
-        const placeIds = results.map((r) => String(r.documentId))
+        // TODO: Implement nearby search using MeiliSearch or other service
+        const placeIds: string[] = []
 
         if (placeIds.length === 0) {
           return {data: [], meta: {total: 0}}
@@ -291,10 +289,8 @@ export default factories.createCoreService(
      */
     async getRecommendations(documentId: string, limit: number = 10) {
       try {
-        const results = await qdrantService.getRecommendations(
-          documentId,
-          limit,
-        )
+        // TODO: Implement recommendations using MeiliSearch or other service
+        const results: any[] = []
 
         const placeIds = results.map((r: any) => String(r.documentId))
 
@@ -483,7 +479,7 @@ export default factories.createCoreService(
         })
 
         if (!place) {
-          await qdrantService.deletePlace(placeDocumentId)
+          // TODO: Delete from MeiliSearch if needed
           return
         }
         strapi.log.info(`place id: ${place.id}`)
@@ -547,14 +543,14 @@ export default factories.createCoreService(
           categoryNames,
         }
 
-        await qdrantService.upsertPlace(placeVector)
+        // TODO: Upsert to MeiliSearch if needed
 
         strapi.log.info(
-          `✅ Place ${placeDocumentId} (ID: ${place.id}) synced to Qdrant with services: [${serviceNames.join(', ')}]`,
+          `✅ Place ${placeDocumentId} (ID: ${place.id}) synced to MeiliSearch with services: [${serviceNames.join(', ')}]`,
         )
       } catch (error) {
         strapi.log.error(
-          `Failed to sync place ${placeDocumentId} to Qdrant:`,
+          `Failed to sync place ${placeDocumentId} to MeiliSearch:`,
           error,
         )
         throw error

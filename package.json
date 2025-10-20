@@ -16,7 +16,6 @@
     "seed:provinces": "curl -X POST http://localhost:1337/api/provinces/seed"
   },
   "dependencies": {
-    "@qdrant/js-client-rest": "^1.15.1",
     "@strapi/plugin-cloud": "5.12.5",
     "@strapi/plugin-documentation": "^5.26.0",
     "@strapi/plugin-graphql": "^5.28.0",

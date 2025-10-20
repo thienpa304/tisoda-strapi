@@ -15,14 +15,14 @@ export default {
    * run jobs, or perform some special logic.
    */
   async bootstrap({ strapi }) {
-    // Initialize Qdrant collection on startup
+    // Initialize MeiliSearch on startup
     try {
-      strapi.log.info('🚀 Initializing Qdrant collection...');
-      const qdrantService = require('./api/place/services/qdrant').default;
-      await qdrantService.initCollection();
-      strapi.log.info('✅ Qdrant collection initialized successfully');
+      strapi.log.info('🚀 Initializing MeiliSearch...');
+      const meiliService = require('./api/place/services/meili').default;
+      await meiliService.initIndex();
+      strapi.log.info('✅ MeiliSearch initialized successfully');
     } catch (error) {
-      strapi.log.error('❌ Failed to initialize Qdrant:', error);
+      strapi.log.error('❌ Failed to initialize MeiliSearch:', error);
     }
   },
 };
