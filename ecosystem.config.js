@@ -12,6 +12,7 @@ module.exports = {
       max_memory_restart: '2G', // Tăng memory limit
       env: {
         NODE_ENV: 'production',
+        HOST: '0.0.0.0',
         PORT: 1337,
         NODE_OPTIONS: '--max-old-space-size=2048' // Tối ưu Node.js memory
       },
