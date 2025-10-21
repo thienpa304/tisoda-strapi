@@ -39,11 +39,11 @@ class MeiliService {
       await this.client.createIndex(MEILI_INDEX, {primaryKey: 'documentId'})
     }
 
-    // Settings
+    // Settings - Optimized for exact service matching
     await index.updateSettings({
       searchableAttributes: [
-        'name', // Highest priority for exact matches
-        'serviceNames',
+        'serviceNames', // Highest priority for service names
+        'name', // Place names
         'serviceGroupNames', 
         'categoryNames',
         'categories',
@@ -63,13 +63,25 @@ class MeiliService {
       ],
       sortableAttributes: ['rating', 'quantitySold'],
       rankingRules: [
-        'words', // Prioritize word matches
-        'typo', // Handle typos
-        'exactness', // Exact matches get higher priority
-        'attribute', // Attribute ranking
+        'exactness', // Exact matches get highest priority
+        'words', // Word matches
+        'attribute', // Attribute ranking  
         'proximity', // Proximity of words
+        'typo', // Handle typos (lower priority)
         'sort', // Custom sorting
       ],
+      // Add typo tolerance settings for better exact matching
+      typoTolerance: {
+        enabled: true,
+        minWordSizeForTypos: {
+          oneTypo: 4,
+          twoTypos: 8,
+        },
+        disableOnWords: [], // Don't disable on any words
+        disableOnAttributes: [], // Don't disable on any attributes
+      },
+      // Improve exact matching by requiring all terms
+      // This is handled by the ranking rules and typo tolerance settings
     })
     this.initialized = true
   }
