@@ -42,9 +42,9 @@ class MeiliService {
     // Settings
     await index.updateSettings({
       searchableAttributes: [
-        'name',
+        'name', // Highest priority for exact matches
         'serviceNames',
-        'serviceGroupNames',
+        'serviceGroupNames', 
         'categoryNames',
         'categories',
         'description',
@@ -63,12 +63,12 @@ class MeiliService {
       ],
       sortableAttributes: ['rating', 'quantitySold'],
       rankingRules: [
-        'typo',
-        'words',
-        'proximity',
-        'attribute',
-        'sort',
-        'exactness',
+        'words', // Prioritize word matches
+        'typo', // Handle typos
+        'exactness', // Exact matches get higher priority
+        'attribute', // Attribute ranking
+        'proximity', // Proximity of words
+        'sort', // Custom sorting
       ],
     })
     this.initialized = true

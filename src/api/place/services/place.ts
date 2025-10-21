@@ -153,12 +153,31 @@ export default factories.createCoreService(
           `Found ${places.length} places matching search criteria`,
         )
 
-        // Map results with scores (Meili has no numeric score exposed by default)
+        // Map results with scores, preserving MeiliSearch order and relevance
         const placesWithScore: PlaceWithScore[] = places.map((place: any) => {
           const hit = hits.find((r: any) => r.documentId === place.documentId)
+          const hitIndex = hits.findIndex((r: any) => r.documentId === place.documentId)
+          
+          // Calculate relevance score based on MeiliSearch position and name matching
+          let relevanceScore = 1
+          if (hitIndex >= 0) {
+            // Higher score for earlier results (MeiliSearch relevance)
+            relevanceScore = Math.max(0.1, 1 - (hitIndex * 0.1))
+            
+            // Boost score for exact name matches
+            if (query && place.name && place.name.toLowerCase().includes(query.toLowerCase())) {
+              relevanceScore += 0.5
+            }
+            
+            // Extra boost for exact matches at the beginning of the name
+            if (query && place.name && place.name.toLowerCase().startsWith(query.toLowerCase())) {
+              relevanceScore += 0.3
+            }
+          }
+          
           return {
             ...place,
-            searchScore: 1, // treat Meili top results as high relevance
+            searchScore: relevanceScore,
             distance: this.calculateDistance(
               latitude,
               longitude,
@@ -190,9 +209,32 @@ export default factories.createCoreService(
             break
           case 'relevance':
           default:
-            sortedPlaces = placesWithScore.sort(
-              (a, b) => b.searchScore - a.searchScore,
-            )
+            sortedPlaces = placesWithScore.sort((a, b) => {
+              // First sort by search score (relevance)
+              const scoreDiff = b.searchScore - a.searchScore
+              if (Math.abs(scoreDiff) > 0.01) {
+                return scoreDiff
+              }
+              
+              // If scores are similar, prioritize exact name matches
+              if (query) {
+                const aNameMatch = a.name?.toLowerCase().includes(query.toLowerCase()) || false
+                const bNameMatch = b.name?.toLowerCase().includes(query.toLowerCase()) || false
+                const aStartsWith = a.name?.toLowerCase().startsWith(query.toLowerCase()) || false
+                const bStartsWith = b.name?.toLowerCase().startsWith(query.toLowerCase()) || false
+                
+                // Exact start matches first
+                if (aStartsWith && !bStartsWith) return -1
+                if (!aStartsWith && bStartsWith) return 1
+                
+                // Then partial matches
+                if (aNameMatch && !bNameMatch) return -1
+                if (!aNameMatch && bNameMatch) return 1
+              }
+              
+              // Finally by rating as tiebreaker
+              return (b.general_info?.rating?.score || 0) - (a.general_info?.rating?.score || 0)
+            })
             break
         }
 
