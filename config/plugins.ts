@@ -55,6 +55,7 @@ export default () => ({
       endpoint: '/graphql',
       shadowCRUD: true,
       landingPage: true,
+      introspection: true,
     },
   },
 });
