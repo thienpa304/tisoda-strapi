@@ -50,4 +50,11 @@ export default () => ({
       ],
     },
   },
+  graphql: {
+    config: {
+      endpoint: '/graphql',
+      shadowCRUD: true,
+      landingPage: true,
+    },
+  },
 });
