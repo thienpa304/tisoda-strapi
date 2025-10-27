@@ -137,7 +137,7 @@ export default factories.createCoreService(
               },
             },
             services: {
-              fields: ['service_name', 'price', 'duration'],
+              fields: ['service_name', 'price', 'duration', 'description'],
               populate: {
                 gallery: {
                   fields: ['url', 'alternativeText', 'width', 'height'],
@@ -408,7 +408,7 @@ export default factories.createCoreService(
               },
             },
             services: {
-              fields: ['service_name', 'price', 'duration'],
+              fields: ['service_name', 'price', 'duration', 'description'],
             },
           },
         })
