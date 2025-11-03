@@ -1,0 +1,28 @@
+{
+  "collectionName": "components_promotion_group_tiers",
+  "info": {
+    "displayName": "Group Tier",
+    "icon": "users",
+    "description": "Discount tier based on minimum number of users"
+  },
+  "options": {},
+  "attributes": {
+    "min_users": {
+      "type": "integer",
+      "required": true,
+      "min": 2,
+      "max": 99
+    },
+    "discount_kind": {
+      "type": "enumeration",
+      "enum": ["percent", "fixed"],
+      "required": true
+    },
+    "amount": {
+      "type": "biginteger",
+      "required": true,
+      "min": 0
+    }
+  }
+}
+

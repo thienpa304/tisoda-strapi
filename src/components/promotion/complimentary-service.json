@@ -1,0 +1,30 @@
+{
+  "collectionName": "components_promotion_complimentary_services",
+  "info": {
+    "displayName": "Complimentary Service",
+    "icon": "gift",
+    "description": "Dịch vụ tặng kèm khi sử dụng dịch vụ khác"
+  },
+  "options": {},
+  "attributes": {
+    "base_service_ids": {
+      "type": "customField",
+      "customField": "global::service-select",
+      "required": true,
+      "description": "Dịch vụ cần sử dụng để được tặng dịch vụ kèm (có thể chọn nhiều)",
+      "options": {
+        "autoSelectAll": false
+      }
+    },
+    "complimentary_service_ids": {
+      "type": "customField",
+      "customField": "global::service-select",
+      "required": true,
+      "description": "Dịch vụ được tặng kèm",
+      "options": {
+        "autoSelectAll": false
+      }
+    }
+  }
+}
+

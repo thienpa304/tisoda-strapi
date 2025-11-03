@@ -11,6 +11,57 @@ export default factories.createCoreController(
   'api::place.place',
   ({strapi}: {strapi: Core.Strapi}) => ({
     /**
+     * Get promotions by place id
+     * GET /api/places/:id/promotions
+     */
+    async promotions(ctx: Context) {
+      const {id} = ctx.params
+      if (!id) return ctx.badRequest('Place id is required')
+
+      const place = await (strapi as any).documents('api::place.place').findOne({
+        documentId: String(id),
+        status: 'published',
+        populate: {
+          promotions: {
+            populate: {
+              application: { populate: { blackout_ranges: true } },
+              group_tiers: true,
+            },
+          },
+        },
+      } as any)
+
+      if (!place) return ctx.notFound('Place not found')
+
+      ctx.body = ((place as any).promotions || []).map((p: any) => normalizePromotionDto(p))
+    },
+
+    /**
+     * Get promotions by place slug
+     * GET /api/places/by-slug/:slug/promotions
+     */
+    async promotionsBySlug(ctx: Context) {
+      const {slug} = ctx.params
+      if (!slug) return ctx.badRequest('Place slug is required')
+
+      const place = await (strapi as any).documents('api::place.place').findFirst({
+        filters: { slug: String(slug) },
+        status: 'published',
+        populate: {
+          promotions: {
+            populate: {
+              application: { populate: { blackout_ranges: true } },
+              group_tiers: true,
+            },
+          },
+        },
+      } as any)
+
+      if (!place) return ctx.notFound('Place not found')
+
+      ctx.body = ((place as any).promotions || []).map((p: any) => normalizePromotionDto(p))
+    },
+    /**
      * Search places with text query, geo-spatial filtering and sorting
      * GET /api/places/search
      *
@@ -356,3 +407,83 @@ export default factories.createCoreController(
     },
   }),
 )
+
+function normalizePromotionDto(p: any) {
+  // Parse days of week from boolean fields
+  const daysOfWeek = []
+  if (p.application?.apply_monday) daysOfWeek.push('mon')
+  if (p.application?.apply_tuesday) daysOfWeek.push('tue')
+  if (p.application?.apply_wednesday) daysOfWeek.push('wed')
+  if (p.application?.apply_thursday) daysOfWeek.push('thu')
+  if (p.application?.apply_friday) daysOfWeek.push('fri')
+  if (p.application?.apply_saturday) daysOfWeek.push('sat')
+  if (p.application?.apply_sunday) daysOfWeek.push('sun')
+
+  // Parse customer types from boolean fields
+  const customer = []
+  if (p.application?.apply_new_customer) customer.push('new')
+  if (p.application?.apply_existing_customer) customer.push('existing')
+
+  // Parse comma-separated text fields
+  const serviceIds = p.application?.service_ids 
+    ? p.application.service_ids.split(',').map((s: string) => s.trim()).filter(Boolean).map(Number)
+    : []
+  
+  const timeSlots = p.application?.time_slots 
+    ? p.application.time_slots.split(',').map((s: string) => s.trim()).filter(Boolean)
+    : []
+  
+  const blackout = p.application?.blackout_dates 
+    ? p.application.blackout_dates.split(',').map((s: string) => s.trim()).filter(Boolean)
+    : []
+  
+  // Birthday month: boolean field - applies if customer's birthday is in the booking month
+  const birthdayMonth = Boolean(p.application?.birthday_month)
+
+  // Parse group tiers from text (format: "2:100000,3:15%")
+  const groupTiers = p.group_tiers 
+    ? p.group_tiers.split(',').map((tier: string) => {
+        const [users, discount] = tier.split(':').map((s: string) => s.trim())
+        const isPercent = discount?.includes('%')
+        return {
+          minUsers: parseInt(users),
+          discount: {
+            kind: isPercent ? 'percent' : 'fixed',
+            amount: parseInt(discount?.replace('%', ''))
+          }
+        }
+      }).filter((t: any) => !isNaN(t.minUsers))
+    : []
+
+  return {
+    id: p.id,
+    type: p.type,
+    name: p.name,
+    stacking: Boolean(p.stacking),
+    validity: {
+      startAt: p.start_at || null,
+      endAt: p.end_at || null,
+    },
+    discount: {
+      kind: p.discount_kind,
+      amount: p.amount ? Number(p.amount) : 0,
+      applyScope: p.apply_scope || null,
+    },
+    groupTiers,
+    application: {
+      serviceIds,
+      daysOfWeek,
+      timeSlots,
+      blackout,
+      customer,
+      bookingValue: {
+        min: p.application?.booking_value_min != null ? Number(p.application.booking_value_min) : null,
+        max: p.application?.booking_value_max != null ? Number(p.application.booking_value_max) : null,
+      },
+      birthdayMonth,
+    },
+    tnc: p.tnc_text || '',
+    status: p.status,
+  }
+}
+

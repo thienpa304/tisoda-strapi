@@ -62,6 +62,26 @@ export default {
         middlewares: [],
       },
     },
+    {
+      method: 'GET',
+      path: '/places/:id/promotions',
+      handler: 'api::place.place.promotions',
+      config: {
+        auth: false,
+        policies: [],
+        middlewares: [],
+      },
+    },
+    {
+      method: 'GET',
+      path: '/places/by-slug/:slug/promotions',
+      handler: 'api::place.place.promotionsBySlug',
+      config: {
+        auth: false,
+        policies: [],
+        middlewares: [],
+      },
+    },
   ],
 };
 

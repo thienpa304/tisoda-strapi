@@ -74,6 +74,11 @@
       "target": "api::discount.discount",
       "inversedBy": "places"
     },
+    "promotions": {
+      "type": "component",
+      "repeatable": true,
+      "component": "promotion.promotion-rule"
+    },
     "avatar": {
       "type": "media",
       "multiple": false,

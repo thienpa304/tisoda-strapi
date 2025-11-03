@@ -1,0 +1,70 @@
+{
+  "collectionName": "components_promotion_promotion_rules",
+  "info": {
+    "displayName": "Promotion rule",
+    "icon": "gift",
+    "description": "Promotion campaign rule for a place"
+  },
+  "options": {},
+  "attributes": {
+    "name": {
+      "type": "string",
+      "required": true,
+      "minLength": 1,
+      "maxLength": 200
+    },
+    "type": {
+      "type": "enumeration",
+      "enum": ["customized", "happy_hour", "group", "new_customer", "free_gift", "quantity_discount"],
+      "required": true
+    },
+    "stacking": {
+      "type": "boolean",
+      "default": true
+    },
+    "status": {
+      "type": "enumeration",
+      "enum": ["active", "inactive"],
+      "default": "active"
+    },
+    "start_at": {
+      "type": "date",
+      "required": true
+    },
+    "end_at": {
+      "type": "date"
+    },
+    "discount_kind": {
+      "type": "enumeration",
+      "enum": ["percent", "fixed"],
+      "required": true
+    },
+    "amount": {
+      "type": "biginteger",
+      "required": true,
+      "min": 1000
+    },
+    "apply_scope": {
+      "type": "enumeration",
+      "enum": ["per_service", "per_booking"]
+    },
+    "group_tiers": {
+      "type": "component",
+      "repeatable": true,
+      "component": "promotion.group-tier"
+    },
+    "complimentary_services": {
+      "type": "component",
+      "repeatable": true,
+      "component": "promotion.complimentary-service"
+    },
+    "application": {
+      "type": "component",
+      "component": "promotion.application"
+    },
+    "tnc_text": {
+      "type": "blocks"
+    }
+  }
+}
+

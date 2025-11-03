@@ -5,7 +5,31 @@ export default {
    *
    * This gives you an opportunity to extend code.
    */
-  register(/*{ strapi }*/) {},
+  register({ strapi }) {
+    // Register custom field for service selection on server side (app-specific, not plugin)
+    strapi.customFields.register({
+      name: 'service-select',
+      type: 'text',
+    });
+
+    // Register custom field for days multi-select
+    strapi.customFields.register({
+      name: 'days-multi-select',
+      type: 'json',
+    });
+
+    // Register custom field for time slots multi-select
+    strapi.customFields.register({
+      name: 'time-slot-multi-select',
+      type: 'json',
+    });
+
+    // Register custom field for blackout dates multi-select
+    strapi.customFields.register({
+      name: 'blackout-dates-multi-select',
+      type: 'json',
+    });
+  },
 
   /**
    * An asynchronous bootstrap function that runs before

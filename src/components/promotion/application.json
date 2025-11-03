@@ -1,0 +1,57 @@
+{
+  "collectionName": "components_promotion_applications",
+  "info": {
+    "displayName": "Application",
+    "icon": "filter",
+    "description": "Điều kiện áp dụng khuyến mãi"
+  },
+  "options": {},
+  "attributes": {
+    "service_ids": {
+      "type": "customField",
+      "customField": "global::service-select",
+      "required": false
+    },
+    "apply_days": {
+      "type": "customField",
+      "customField": "global::days-multi-select",
+      "default": ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"]
+    },
+    "time_slots": {
+      "type": "customField",
+      "customField": "global::time-slot-multi-select",
+      "options": {
+        "interval": 15,
+        "startHour": 0,
+        "endHour": 23
+      }
+    },
+    "blackout_dates": {
+      "type": "customField",
+      "customField": "global::blackout-dates-multi-select",
+      "description": "Ngày loại trừ - From DDMMYY to DDMMYY (calendar type). Ngày bắt đầu phải nằm trong validity, ngày kết thúc >= ngày bắt đầu và trong validity (hoặc bất kỳ nếu validity không có end date). Dịch vụ đặt trong blackout dates không áp dụng discount."
+    },
+    "apply_new_customer": {
+      "type": "boolean",
+      "default": true
+    },
+    "apply_existing_customer": {
+      "type": "boolean",
+      "default": true,
+      "description": "Áp dụng cho khách hàng cũ (đã từng đặt lịch tại địa điểm này)"
+    },
+    "birthday_month": {
+      "type": "boolean",
+      "default": false,
+      "description": "Áp dụng giảm giá cho khách hàng có sinh nhật trong tháng đặt lịch"
+    },
+    "booking_value_min": {
+      "type": "biginteger"
+    },
+    "booking_value_max": {
+      "type": "biginteger"
+    }
+  }
+}
+
+
