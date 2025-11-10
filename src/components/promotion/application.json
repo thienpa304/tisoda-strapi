@@ -21,7 +21,7 @@
       "type": "customField",
       "customField": "global::time-slot-multi-select",
       "options": {
-        "interval": 15,
+        "interval": 30,
         "startHour": 0,
         "endHour": 23
       }

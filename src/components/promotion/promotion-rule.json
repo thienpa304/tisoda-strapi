@@ -41,8 +41,7 @@
     },
     "amount": {
       "type": "biginteger",
-      "required": true,
-      "min": 1000
+      "required": true
     },
     "apply_scope": {
       "type": "enumeration",

@@ -15,7 +15,7 @@ interface TimeSlotMultiSelectProps {
 }
 
 // Generate time slots based on options
-const generateTimeSlots = (interval = 15, startHour = 0, endHour = 23) => {
+const generateTimeSlots = (interval = 30, startHour = 0, endHour = 23) => {
   const slots = [];
   for (let hour = startHour; hour <= endHour; hour++) {
     for (let minute = 0; minute < 60; minute += interval) {
@@ -48,7 +48,7 @@ export const TimeSlotMultiSelectInput = React.forwardRef<HTMLInputElement, TimeS
   const selectedValues = Array.isArray(value) ? value : [];
   
   // Read options from attribute
-  const interval = attribute?.options?.interval || 15;
+  const interval = attribute?.options?.interval || 30;
   const startHour = attribute?.options?.startHour || 0;
   const endHour = attribute?.options?.endHour || 23;
   
