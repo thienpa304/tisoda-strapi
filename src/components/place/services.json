@@ -25,6 +25,13 @@
       "type": "biginteger",
       "required": true
     },
+    "is_best_seller": {
+      "type": "boolean",
+      "default": false
+    },
+    "service_group_description": {
+      "type": "blocks"
+    },
     "gallery": {
       "type": "media",
       "multiple": true,

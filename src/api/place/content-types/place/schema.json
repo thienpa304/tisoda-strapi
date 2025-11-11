@@ -65,29 +65,10 @@
       "component": "place.place-owner",
       "repeatable": false
     },
-    "service_group_description": {
-      "type": "blocks"
-    },
-    "discount": {
-      "type": "relation",
-      "relation": "manyToOne",
-      "target": "api::discount.discount",
-      "inversedBy": "places"
-    },
     "promotions": {
       "type": "component",
       "repeatable": true,
       "component": "promotion.promotion-rule"
-    },
-    "avatar": {
-      "type": "media",
-      "multiple": false,
-      "allowedTypes": [
-        "images",
-        "files",
-        "videos",
-        "audios"
-      ]
     }
   }
 }
