@@ -66,7 +66,11 @@ export default factories.createCoreService(
 
         // Perform keyword search with Meilisearch - optimized for exact service matching
         const meiliSort =
-          sortBy === 'rating' ? 'rating' : sortBy === 'popular' ? 'popular' : undefined
+          sortBy === 'rating'
+            ? 'rating'
+            : sortBy === 'popular'
+              ? 'popular'
+              : undefined
         const meiliResult = await meiliService.search({
           query,
           categories,
@@ -91,7 +95,9 @@ export default factories.createCoreService(
         const placeIds = hits.map((r: any) => String(r.documentId))
 
         if (placeIds.length === 0) {
-          strapi.log.warn(`⚠️ No places found in Meilisearch for query: "${query}"`)
+          strapi.log.warn(
+            `⚠️ No places found in Meilisearch for query: "${query}"`,
+          )
           return {data: [], meta: {total: 0, limit, offset, sortBy}}
         }
 
@@ -105,9 +111,6 @@ export default factories.createCoreService(
           },
           fields: ['name', 'slug', 'quantity_sold'],
           populate: {
-            avatar: {
-              fields: ['url', 'alternativeText', 'width', 'height'],
-            },
             category_places: {
               fields: ['name', 'slug'],
             },
@@ -156,61 +159,74 @@ export default factories.createCoreService(
         // Map results with scores, optimized for exact service matching
         const placesWithScore: PlaceWithScore[] = places.map((place: any) => {
           const hit = hits.find((r: any) => r.documentId === place.documentId)
-          const hitIndex = hits.findIndex((r: any) => r.documentId === place.documentId)
-          
+          const hitIndex = hits.findIndex(
+            (r: any) => r.documentId === place.documentId,
+          )
+
           // Calculate relevance score with emphasis on exact service matches
           let relevanceScore = 1
           if (hitIndex >= 0) {
             // Base score from MeiliSearch position
-            relevanceScore = Math.max(0.1, 1 - (hitIndex * 0.05))
-            
+            relevanceScore = Math.max(0.1, 1 - hitIndex * 0.05)
+
             if (query) {
               const queryLower = query.toLowerCase()
-              
+
               // Check for exact service name matches (highest priority)
-              const exactServiceMatch = place.services?.some((service: any) => 
-                service.service_name?.toLowerCase() === queryLower
+              const exactServiceMatch = place.services?.some(
+                (service: any) =>
+                  service.service_name?.toLowerCase() === queryLower,
               )
               if (exactServiceMatch) {
                 relevanceScore += 2.0 // Very high boost for exact service match
               }
-              
+
               // Check for service name contains query (high priority)
-              const serviceContainsMatch = place.services?.some((service: any) => 
-                service.service_name?.toLowerCase().includes(queryLower)
+              const serviceContainsMatch = place.services?.some(
+                (service: any) =>
+                  service.service_name?.toLowerCase().includes(queryLower),
               )
               if (serviceContainsMatch) {
                 relevanceScore += 1.5 // High boost for service contains
               }
-              
+
               // Check for place name exact match
               if (place.name?.toLowerCase() === queryLower) {
                 relevanceScore += 1.0
               }
-              
+
               // Check for place name contains query
               if (place.name?.toLowerCase().includes(queryLower)) {
                 relevanceScore += 0.5
               }
-              
+
               // Check for place name starts with query
               if (place.name?.toLowerCase().startsWith(queryLower)) {
                 relevanceScore += 0.3
               }
-              
+
               // Penalty for very loose matches (reduce noise)
-              const hasRelevantServices = place.services?.some((service: any) => {
-                const serviceName = service.service_name?.toLowerCase() || ''
-                return serviceName.includes(queryLower) || 
-                       queryLower.split(' ').some(word => serviceName.includes(word))
-              })
-              
-              if (!hasRelevantServices && !place.name?.toLowerCase().includes(queryLower)) {
+              const hasRelevantServices = place.services?.some(
+                (service: any) => {
+                  const serviceName = service.service_name?.toLowerCase() || ''
+                  return (
+                    serviceName.includes(queryLower) ||
+                    queryLower
+                      .split(' ')
+                      .some((word) => serviceName.includes(word))
+                  )
+                },
+              )
+
+              if (
+                !hasRelevantServices &&
+                !place.name?.toLowerCase().includes(queryLower)
+              ) {
                 relevanceScore *= 0.3 // Heavy penalty for irrelevant results
               }
             }
           }
-          
+
           return {
             ...place,
             searchScore: relevanceScore,
@@ -251,50 +267,55 @@ export default factories.createCoreService(
               if (Math.abs(scoreDiff) > 0.01) {
                 return scoreDiff
               }
-              
+
               // If scores are similar, prioritize exact service matches
               if (query) {
                 const queryLower = query.toLowerCase()
-                
+
                 // Check for exact service matches (highest priority)
-                const aExactService = a.services?.some((service: any) => 
-                  service.service_name?.toLowerCase() === queryLower
+                const aExactService = a.services?.some(
+                  (service: any) =>
+                    service.service_name?.toLowerCase() === queryLower,
                 )
-                const bExactService = b.services?.some((service: any) => 
-                  service.service_name?.toLowerCase() === queryLower
+                const bExactService = b.services?.some(
+                  (service: any) =>
+                    service.service_name?.toLowerCase() === queryLower,
                 )
-                
+
                 if (aExactService && !bExactService) return -1
                 if (!aExactService && bExactService) return 1
-                
+
                 // Check for service contains matches
-                const aServiceContains = a.services?.some((service: any) => 
-                  service.service_name?.toLowerCase().includes(queryLower)
+                const aServiceContains = a.services?.some((service: any) =>
+                  service.service_name?.toLowerCase().includes(queryLower),
                 )
-                const bServiceContains = b.services?.some((service: any) => 
-                  service.service_name?.toLowerCase().includes(queryLower)
+                const bServiceContains = b.services?.some((service: any) =>
+                  service.service_name?.toLowerCase().includes(queryLower),
                 )
-                
+
                 if (aServiceContains && !bServiceContains) return -1
                 if (!aServiceContains && bServiceContains) return 1
-                
+
                 // Check for exact place name matches
                 const aExactName = a.name?.toLowerCase() === queryLower
                 const bExactName = b.name?.toLowerCase() === queryLower
-                
+
                 if (aExactName && !bExactName) return -1
                 if (!aExactName && bExactName) return 1
-                
+
                 // Check for place name contains
                 const aNameContains = a.name?.toLowerCase().includes(queryLower)
                 const bNameContains = b.name?.toLowerCase().includes(queryLower)
-                
+
                 if (aNameContains && !bNameContains) return -1
                 if (!aNameContains && bNameContains) return 1
               }
-              
+
               // Finally by rating as tiebreaker
-              return (b.general_info?.rating?.score || 0) - (a.general_info?.rating?.score || 0)
+              return (
+                (b.general_info?.rating?.score || 0) -
+                (a.general_info?.rating?.score || 0)
+              )
             })
             break
         }
@@ -302,37 +323,38 @@ export default factories.createCoreService(
         // Filter out irrelevant results for better accuracy
         const filteredResults = sortedPlaces.filter((place) => {
           if (!query) return true
-          
+
           const queryLower = query.toLowerCase()
-          
+
           // Keep results with high relevance scores
           if (place.searchScore > 2.0) return true
-          
+
           // Keep results with exact service matches
-          const hasExactService = place.services?.some((service: any) => 
-            service.service_name?.toLowerCase() === queryLower
+          const hasExactService = place.services?.some(
+            (service: any) =>
+              service.service_name?.toLowerCase() === queryLower,
           )
           if (hasExactService) return true
-          
+
           // Keep results with service contains matches
-          const hasServiceContains = place.services?.some((service: any) => 
-            service.service_name?.toLowerCase().includes(queryLower)
+          const hasServiceContains = place.services?.some((service: any) =>
+            service.service_name?.toLowerCase().includes(queryLower),
           )
           if (hasServiceContains) return true
-          
+
           // Keep results with place name matches
           const hasNameMatch = place.name?.toLowerCase().includes(queryLower)
           if (hasNameMatch) return true
-          
+
           // Keep results with at least one word match in services
           const hasWordMatch = place.services?.some((service: any) => {
             const serviceName = service.service_name?.toLowerCase() || ''
-            return queryLower.split(' ').some(word => 
-              word.length > 2 && serviceName.includes(word)
-            )
+            return queryLower
+              .split(' ')
+              .some((word) => word.length > 2 && serviceName.includes(word))
           })
           if (hasWordMatch) return true
-          
+
           // Filter out results with very low relevance
           return place.searchScore > 0.5
         })
@@ -376,9 +398,6 @@ export default factories.createCoreService(
           status: 'published',
           fields: ['name', 'slug', 'quantity_sold'],
           populate: {
-            avatar: {
-              fields: ['url', 'alternativeText', 'width', 'height'],
-            },
             category_places: {
               fields: ['name', 'slug'],
             },
@@ -524,7 +543,9 @@ export default factories.createCoreService(
           // If place not found or not published, delete from Meili
           const meiliService = strapi.service('api::place.meili')
           await meiliService.deletePlace(placeDocumentId)
-          strapi.log.info(`❌ Place ${placeDocumentId} deleted from Meilisearch`)
+          strapi.log.info(
+            `❌ Place ${placeDocumentId} deleted from Meilisearch`,
+          )
           return
         }
 
@@ -532,7 +553,9 @@ export default factories.createCoreService(
         await meiliService.initIndex()
 
         // Map to Meili document format
-        const categories = (place.category_places || []).map((c: any) => c.slug || c.name)
+        const categories = (place.category_places || []).map(
+          (c: any) => c.slug || c.name,
+        )
         const serviceNames = [
           ...new Set(
             (place.services || [])
