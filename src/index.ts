@@ -29,6 +29,12 @@ export default {
       name: 'blackout-dates-multi-select',
       type: 'json',
     });
+
+    // Register generic multi-select custom field
+    strapi.customFields.register({
+      name: 'multi-select',
+      type: 'json',
+    });
   },
 
   /**

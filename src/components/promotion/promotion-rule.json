@@ -34,6 +34,10 @@
     "end_at": {
       "type": "date"
     },
+    "no_end_date": {
+      "type": "boolean",
+      "default": false
+    },
     "discount_kind": {
       "type": "enumeration",
       "enum": ["percent", "fixed"],

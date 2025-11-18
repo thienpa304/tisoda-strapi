@@ -82,6 +82,26 @@ export default {
           })),
       },
     });
+
+    // Register generic multi-select custom field
+    app.customFields.register({
+      name: 'multi-select',
+      type: 'json',
+      intlLabel: {
+        id: 'multi-select.label',
+        defaultMessage: 'Multi-Select',
+      },
+      intlDescription: {
+        id: 'multi-select.description',
+        defaultMessage: 'Select multiple options from the list',
+      },
+      components: {
+        Input: async () =>
+          import('./extensions/components/MultiSelect').then((module) => ({
+            default: module.MultiSelectInput,
+          })),
+      },
+    });
   },
   bootstrap(app: any) {
     // bootstrap code here if needed

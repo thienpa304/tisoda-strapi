@@ -11,6 +11,10 @@
       "type": "string",
       "required": true
     },
+    "service_type": {
+      "type": "string",
+      "required": false
+    },
     "description": {
       "type": "blocks"
     },
@@ -24,6 +28,32 @@
     "price": {
       "type": "biginteger",
       "required": true
+    },
+    "unit": {
+      "type": "enumeration",
+      "enum": [
+        "Người",
+        "Người lớn",
+        "Trẻ em",
+        "Em bé",
+        "Dịch vụ",
+        "Buổi",
+        "Thẻ",
+        "Gói",
+        "Bộ",
+        "Bộ Tay",
+        "Bộ Chân",
+        "Bộ Tay và Chân",
+        "Bộ Tay hoặc Chân",
+        "Ngón",
+        "Cái",
+        "custom"
+      ],
+      "required": false
+    },
+    "unit_custom": {
+      "type": "string",
+      "required": false
     },
     "is_best_seller": {
       "type": "boolean",

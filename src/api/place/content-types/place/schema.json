@@ -24,6 +24,17 @@
       "component": "general.metadata",
       "repeatable": false
     },
+    "tip": {
+      "type": "customField",
+      "customField": "global::multi-select",
+      "enum": [
+        "included",
+        "optional",
+        "required"
+      ],
+      "name": "Tip",
+      "required": false
+    },
     "category_places": {
       "type": "relation",
       "relation": "manyToMany",
@@ -67,8 +78,8 @@
     },
     "promotions": {
       "type": "component",
-      "repeatable": true,
-      "component": "promotion.promotion-rule"
+      "component": "promotion.promotion-rule",
+      "repeatable": true
     }
   }
 }
