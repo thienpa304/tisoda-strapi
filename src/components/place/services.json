@@ -11,7 +11,7 @@
       "type": "string",
       "required": true
     },
-    "service_type": {
+    "service_cluster_name": {
       "type": "string",
       "required": false
     },
