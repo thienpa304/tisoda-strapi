@@ -410,6 +410,7 @@ export interface ApiAppointmentAppointment extends Struct.CollectionTypeSchema {
         'V\u00ED \u0111i\u1EC7n t\u1EED',
       ]
     >;
+    promotions: Schema.Attribute.JSON;
     place: Schema.Attribute.Relation<'oneToOne', 'api::place.place'>;
     publishedAt: Schema.Attribute.DateTime;
     status_item: Schema.Attribute.Enumeration<

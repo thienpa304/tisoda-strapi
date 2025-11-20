@@ -48,6 +48,9 @@
         "Tiền mặt",
         "Ví điện tử"
       ]
+    },
+    "promotions": {
+      "type": "json"
     }
   }
 }
