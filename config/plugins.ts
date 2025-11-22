@@ -56,6 +56,7 @@ export default () => ({
       shadowCRUD: true,
       landingPage: true,
       introspection: true,
+      amountLimit: 100,
     },
   },
 });
