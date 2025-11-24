@@ -31,7 +31,6 @@ export const ServiceSelectInput = React.forwardRef<HTMLInputElement, ServiceSele
   const { get } = useFetchClient();
   const [services, setServices] = useState<Array<{ id: string; name: string }>>([]);
   const [loading, setLoading] = useState(true);
-
   // Read autoSelectAll option from attribute (default: true for backward compatibility)
   const autoSelectAll = useMemo(() => {
     return attribute?.options?.autoSelectAll !== false;
@@ -46,31 +45,30 @@ export const ServiceSelectInput = React.forwardRef<HTMLInputElement, ServiceSele
     if (placeTypeIndex !== -1 && pathParts[placeTypeIndex + 1]) {
       const documentId = pathParts[placeTypeIndex + 1];
       
-        get(`/content-manager/collection-types/api::place.place/${documentId}`)
-          .then((res: any) => {
-            const placeData = res.data?.data || res.data;
-            const placeServices = placeData?.services || [];
-            
-            const serviceOptions = placeServices.map((s: any) => ({
-              id: String(s.id),
-              name: s.service_name || s.service_code || `Service ${s.id}`,
-            }));
-            
-            setServices(serviceOptions);
-            setLoading(false);
-            
-            // Auto-select all services if field is empty and autoSelectAll is enabled
-            if (!value && serviceOptions.length > 0 && autoSelectAll) {
-              const allServiceIds = serviceOptions.map((s: { id: string; name: string }) => s.id);
-              onChange({
-                target: {
-                  name,
-                  value: allServiceIds.join(', '),
-                  type: 'text',
-                },
-              });
-            }
-          })
+      get(`/api/places/${documentId}?populate=services`)
+        .then((res: any) => {
+          const placeData = res.data?.data || res.data;
+          const placeServices = placeData?.services || [];
+          
+          const serviceOptions = placeServices.map((s: any) => ({
+            id: String(s.id),
+            name: s.service_name || s.service_code || `Service ${s.id}`,
+          }));
+          
+          setServices(serviceOptions);
+          setLoading(false);
+          // Auto-select all services if field is empty and autoSelectAll is enabled
+          if (!value && serviceOptions.length > 0 && autoSelectAll) {
+            const allServiceIds = serviceOptions.map((s: { id: string; name: string }) => s.id);
+            onChange({
+              target: {
+                name,
+                value: allServiceIds.join(', '),
+                type: 'text',
+              },
+            });
+          }
+        })
         .catch((err) => {
           console.error('Failed to fetch place services:', err);
           setLoading(false);
