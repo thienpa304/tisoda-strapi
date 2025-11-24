@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { MultiSelect, MultiSelectOption, Box, Typography } from '@strapi/design-system';
 import { useFetchClient } from '@strapi/strapi/admin';
+import { stringToId } from '../../../utils/string-to-id';
 
 interface ServiceSelectInputProps {
   name: string;
@@ -31,6 +32,7 @@ export const ServiceSelectInput = React.forwardRef<HTMLInputElement, ServiceSele
   const { get } = useFetchClient();
   const [services, setServices] = useState<Array<{ id: string; name: string }>>([]);
   const [loading, setLoading] = useState(true);
+
   // Read autoSelectAll option from attribute (default: true for backward compatibility)
   const autoSelectAll = useMemo(() => {
     return attribute?.options?.autoSelectAll !== false;
@@ -51,7 +53,7 @@ export const ServiceSelectInput = React.forwardRef<HTMLInputElement, ServiceSele
           const placeServices = placeData?.services || [];
           
           const serviceOptions = placeServices.map((s: any) => ({
-            id: String(s.id),
+            id: stringToId(s.service_name),
             name: s.service_name || s.service_code || `Service ${s.id}`,
           }));
           
