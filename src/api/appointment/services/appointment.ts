@@ -35,26 +35,17 @@ export default factories.createCoreService(
 
       const summary = appointment?.appointment_summary ?? {};
       const schedule = appointment?.date_time_select ?? {};
+      const appointmentId = appointment.documentId || appointment.id;
+      const adminUrl = `${process.env.STRAPI_ADMIN_URL}/dashboard/content-manager/collection-types/api::appointment.appointment/${appointmentId}`;
 
       const lines = [
         '📣 Cuộc hẹn mới vừa được tạo',
-        `• Mã: ${appointment.documentId || appointment.id || 'N/A'}`,
         `• Khách: ${sanitizeText(appointment.user_name) || 'Không rõ'}`,
         `• SĐT: ${sanitizeText(appointment.user_phone) || 'Không rõ'}`,
         summary.place_name
           ? `• Địa điểm: ${sanitizeText(summary.place_name)}`
           : null,
-        summary.service_name
-          ? `• Dịch vụ: ${sanitizeText(summary.service_name)}`
-          : null,
-        schedule.date ? `• Ngày: ${schedule.date}` : null,
-        schedule.time ? `• Giờ: ${schedule.time}` : null,
-        summary.total_price
-          ? `• Tổng: ${formatCurrency(summary.total_price)} đ`
-          : null,
-        summary.note
-          ? `• Ghi chú: ${sanitizeText(summary.note)?.slice(0, 180)}`
-          : null,
+        appointmentId ? `[Xem chi tiết](${adminUrl})` : null
       ].filter(Boolean);
 
       const message = lines.join('\n');
@@ -75,6 +66,7 @@ export default factories.createCoreService(
             body: JSON.stringify({
               chat_id: chatId,
               text: message,
+              parse_mode: 'Markdown',
             }),
           },
         );
