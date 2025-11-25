@@ -45,7 +45,7 @@ export default factories.createCoreService(
         summary.place_name
           ? `• Địa điểm: ${sanitizeText(summary.place_name)}`
           : null,
-        appointmentId ? `[Xem chi tiết](${adminUrl})` : null
+        appointmentId ? `• [Xem chi tiết](${adminUrl})` : null
       ].filter(Boolean);
 
       const message = lines.join('\n');
