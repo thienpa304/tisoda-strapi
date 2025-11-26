@@ -11,7 +11,6 @@ export default factories.createCoreRouter('api::place.place', {
       middlewares: [],
     },
     findOne: {
-      auth: false,
       middlewares: [],
     },
     create: {
