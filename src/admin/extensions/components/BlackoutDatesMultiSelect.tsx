@@ -1,11 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import {
-  Box,
-  Typography,
-  Button,
-  DatePicker,
-  Flex,
-} from '@strapi/design-system';
+import { Box, Typography, Button, DatePicker, Flex } from '@strapi/design-system';
 import { Plus, Trash, Cross } from '@strapi/icons';
 
 interface DateRange {
@@ -57,7 +51,7 @@ export const BlackoutDatesMultiSelectInput = React.forwardRef<
 
   const handleAddRange = useCallback(() => {
     if (!currentStart) return;
-    
+
     // If end date is provided, validate it
     if (currentEnd && new Date(currentStart) > new Date(currentEnd)) {
       return; // Invalid range
@@ -87,7 +81,7 @@ export const BlackoutDatesMultiSelectInput = React.forwardRef<
         },
       });
     },
-    [ranges, name, onChange]
+    [ranges, name, onChange],
   );
 
   const handleRemoveAll = useCallback(() => {
@@ -122,7 +116,8 @@ export const BlackoutDatesMultiSelectInput = React.forwardRef<
       </Flex>
 
       <Typography variant="pi" textColor="neutral600" paddingBottom={3}>
-        {description?.defaultMessage || 'The promotion would be inactive on the dates selected below:'}
+        {description?.defaultMessage ||
+          'The promotion would be inactive on the dates selected below:'}
       </Typography>
 
       <Box>
@@ -220,4 +215,3 @@ export const BlackoutDatesMultiSelectInput = React.forwardRef<
 });
 
 BlackoutDatesMultiSelectInput.displayName = 'BlackoutDatesMultiSelectInput';
-

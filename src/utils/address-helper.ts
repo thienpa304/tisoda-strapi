@@ -32,22 +32,14 @@ export function validateVietnamCoordinates(lat: number, lng: number): boolean {
  * Calculate distance between two coordinates (Haversine formula)
  * Returns distance in kilometers
  */
-export function calculateDistance(
-  lat1: number,
-  lng1: number,
-  lat2: number,
-  lng2: number
-): number {
+export function calculateDistance(lat1: number, lng1: number, lat2: number, lng2: number): number {
   const R = 6371; // Earth's radius in km
   const dLat = toRad(lat2 - lat1);
   const dLng = toRad(lng2 - lng1);
 
   const a =
     Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-    Math.cos(toRad(lat1)) *
-      Math.cos(toRad(lat2)) *
-      Math.sin(dLng / 2) *
-      Math.sin(dLng / 2);
+    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLng / 2) * Math.sin(dLng / 2);
 
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   return R * c;
@@ -75,7 +67,7 @@ export async function formatAddress(addressData: AddressData): Promise<string> {
       const district = await strapi.entityService.findOne(
         'api::district.district',
         addressData.district,
-        { fields: ['name'] }
+        { fields: ['name'] },
       );
       if (district) parts.push(district.name);
     }
@@ -84,7 +76,7 @@ export async function formatAddress(addressData: AddressData): Promise<string> {
       const province = await strapi.entityService.findOne(
         'api::province.province',
         addressData.province,
-        { fields: ['name'] }
+        { fields: ['name'] },
       );
       if (province) parts.push(province.name);
     }
@@ -113,7 +105,7 @@ export function getGoogleMapsUrl(lat: number, lng: number): string {
 export const VIETNAM_CITIES = {
   hanoi: { lat: 21.028511, lng: 105.804817 },
   hochiminh: { lat: 10.762622, lng: 106.660172 },
-  danang: { lat: 16.047079, lng: 108.206230 },
+  danang: { lat: 16.047079, lng: 108.20623 },
   haiphong: { lat: 20.844787, lng: 106.688087 },
   cantho: { lat: 10.045162, lng: 105.746857 },
 };
@@ -126,4 +118,3 @@ export default {
   getGoogleMapsUrl,
   VIETNAM_CITIES,
 };
-

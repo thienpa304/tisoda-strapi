@@ -15,12 +15,7 @@ export default [
             'https://admin.tisoda.com',
             'https://market-assets.strapi.io',
           ],
-          'media-src': [
-            "'self'",
-            'data:',
-            'blob:',
-            'https://admin.tisoda.com',
-          ],
+          'media-src': ["'self'", 'data:', 'blob:', 'https://admin.tisoda.com'],
           upgradeInsecureRequests: null,
         },
       },
@@ -29,7 +24,15 @@ export default [
   {
     name: 'strapi::cors',
     config: {
-      origin: ['https://admin.tisoda.com', 'https://tisoda.com', 'https://dev.tisoda.com', 'https://www.tisoda.com', 'http://localhost:3000', 'http://localhost:3001', 'http://127.0.0.1:3000'],
+      origin: [
+        'https://admin.tisoda.com',
+        'https://tisoda.com',
+        'https://dev.tisoda.com',
+        'https://www.tisoda.com',
+        'http://localhost:3000',
+        'http://localhost:3001',
+        'http://127.0.0.1:3000',
+      ],
       headers: '*',
       methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD', 'OPTIONS'],
       credentials: true,

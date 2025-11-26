@@ -11,7 +11,7 @@
       "type": "relation",
       "relation": "oneToOne",
       "target": "api::province.province",
-      "required": true 
+      "required": true
     },
     "district": {
       "type": "relation",
@@ -64,4 +64,3 @@
     }
   }
 }
-

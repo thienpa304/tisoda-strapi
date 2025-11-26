@@ -2,21 +2,21 @@
  * place controller
  */
 
-import {factories} from '@strapi/strapi'
-import type {Core} from '@strapi/strapi'
+import { factories } from '@strapi/strapi';
+import type { Core } from '@strapi/strapi';
 
-type Context = any // Strapi v5 context type
+type Context = any; // Strapi v5 context type
 
 export default factories.createCoreController(
   'api::place.place',
-  ({strapi}: {strapi: Core.Strapi}) => ({
+  ({ strapi }: { strapi: Core.Strapi }) => ({
     /**
      * Get promotions by place id
      * GET /api/places/:id/promotions
      */
     async promotions(ctx: Context) {
-      const {id} = ctx.params
-      if (!id) return ctx.badRequest('Place id is required')
+      const { id } = ctx.params;
+      if (!id) return ctx.badRequest('Place id is required');
 
       const place = await (strapi as any).documents('api::place.place').findOne({
         documentId: String(id),
@@ -29,11 +29,11 @@ export default factories.createCoreController(
             },
           },
         },
-      } as any)
+      } as any);
 
-      if (!place) return ctx.notFound('Place not found')
+      if (!place) return ctx.notFound('Place not found');
 
-      ctx.body = ((place as any).promotions || []).map((p: any) => normalizePromotionDto(p))
+      ctx.body = ((place as any).promotions || []).map((p: any) => normalizePromotionDto(p));
     },
 
     /**
@@ -41,8 +41,8 @@ export default factories.createCoreController(
      * GET /api/places/by-slug/:slug/promotions
      */
     async promotionsBySlug(ctx: Context) {
-      const {slug} = ctx.params
-      if (!slug) return ctx.badRequest('Place slug is required')
+      const { slug } = ctx.params;
+      if (!slug) return ctx.badRequest('Place slug is required');
 
       const place = await (strapi as any).documents('api::place.place').findFirst({
         filters: { slug: String(slug) },
@@ -55,11 +55,11 @@ export default factories.createCoreController(
             },
           },
         },
-      } as any)
+      } as any);
 
-      if (!place) return ctx.notFound('Place not found')
+      if (!place) return ctx.notFound('Place not found');
 
-      ctx.body = ((place as any).promotions || []).map((p: any) => normalizePromotionDto(p))
+      ctx.body = ((place as any).promotions || []).map((p: any) => normalizePromotionDto(p));
     },
     /**
      * Search places with text query, geo-spatial filtering and sorting
@@ -102,12 +102,12 @@ export default factories.createCoreController(
           sortBy,
           limit,
           offset,
-        } = ctx.query
+        } = ctx.query;
 
         // Parse categories if provided
         const categoriesArray = categories
           ? String(categories).split(',').filter(Boolean)
-          : undefined
+          : undefined;
 
         // Call service method
         const result = await strapi.service('api::place.place').search({
@@ -124,11 +124,11 @@ export default factories.createCoreController(
           sortBy: sortBy ? (String(sortBy) as any) : 'relevance',
           limit: limit ? parseInt(String(limit)) : undefined,
           offset: offset ? parseInt(String(offset)) : undefined,
-        })
+        });
 
-        ctx.body = result
+        ctx.body = result;
       } catch (error: any) {
-        strapi.log.error('Search controller error:', error)
+        strapi.log.error('Search controller error:', error);
 
         // Handle OpenAI quota errors specifically
         if (error.message?.includes('OpenAI API quota exceeded')) {
@@ -139,10 +139,10 @@ export default factories.createCoreController(
               details:
                 'The AI search service has reached its usage limit. Please try again later or contact support.',
             },
-          )
+          );
         }
 
-        ctx.throw(500, 'Search failed', {details: error.message})
+        ctx.throw(500, 'Search failed', { details: error.message });
       }
     },
 
@@ -165,19 +165,17 @@ export default factories.createCoreController(
      */
     async nearby(ctx: Context) {
       try {
-        const {lat, lng, radius, categories, minRating, limit} = ctx.query
+        const { lat, lng, radius, categories, minRating, limit } = ctx.query;
 
         // Validate required params
         if (!lat || !lng) {
-          return ctx.badRequest(
-            'Latitude (lat) and longitude (lng) are required',
-          )
+          return ctx.badRequest('Latitude (lat) and longitude (lng) are required');
         }
 
         // Parse categories if provided
         const categoriesArray = categories
           ? String(categories).split(',').filter(Boolean)
-          : undefined
+          : undefined;
 
         const result = await strapi.service('api::place.place').searchNearby({
           latitude: parseFloat(String(lat)),
@@ -186,12 +184,12 @@ export default factories.createCoreController(
           categories: categoriesArray,
           minRating: minRating ? parseFloat(String(minRating)) : undefined,
           limit: limit ? parseInt(String(limit)) : undefined,
-        })
+        });
 
-        ctx.body = result
+        ctx.body = result;
       } catch (error: any) {
-        strapi.log.error('Nearby search controller error:', error)
-        ctx.throw(500, 'Nearby search failed', {details: error.message})
+        strapi.log.error('Nearby search controller error:', error);
+        ctx.throw(500, 'Nearby search failed', { details: error.message });
       }
     },
 
@@ -208,26 +206,23 @@ export default factories.createCoreController(
      */
     async recommendations(ctx: Context) {
       try {
-        const {id} = ctx.params
-        const {limit} = ctx.query
+        const { id } = ctx.params;
+        const { limit } = ctx.query;
 
         if (!id) {
-          return ctx.badRequest('Place document ID is required')
+          return ctx.badRequest('Place document ID is required');
         }
 
         const result = await strapi
           .service('api::place.place')
-          .getRecommendations(
-            String(id),
-            limit ? parseInt(String(limit)) : undefined,
-          )
+          .getRecommendations(String(id), limit ? parseInt(String(limit)) : undefined);
 
-        ctx.body = result
+        ctx.body = result;
       } catch (error: any) {
-        strapi.log.error('Recommendations controller error:', error)
+        strapi.log.error('Recommendations controller error:', error);
         ctx.throw(500, 'Failed to get recommendations', {
           details: error.message,
-        })
+        });
       }
     },
 
@@ -243,23 +238,21 @@ export default factories.createCoreController(
      */
     async sync(ctx: Context) {
       try {
-        const {documentId} = ctx.params
+        const { documentId } = ctx.params;
 
         if (!documentId) {
-          return ctx.badRequest('Place document ID is required')
+          return ctx.badRequest('Place document ID is required');
         }
 
-        await strapi
-          .service('api::place.place')
-          .syncToQdrant(String(documentId))
+        await strapi.service('api::place.place').syncToQdrant(String(documentId));
 
         ctx.body = {
           success: true,
           message: `Place ${documentId} synced to Qdrant`,
-        }
+        };
       } catch (error: any) {
-        strapi.log.error('Sync controller error:', error)
-        ctx.throw(500, 'Sync failed', {details: error.message})
+        strapi.log.error('Sync controller error:', error);
+        ctx.throw(500, 'Sync failed', { details: error.message });
       }
     },
 
@@ -278,21 +271,19 @@ export default factories.createCoreController(
       try {
         const places = await strapi.documents('api::place.place').findMany({
           status: 'published',
-        })
+        });
 
-        strapi.log.info(`📍 Found ${places.length} places to sync`)
-        let synced = 0
-        let failed = 0
+        strapi.log.info(`📍 Found ${places.length} places to sync`);
+        let synced = 0;
+        let failed = 0;
 
         for (const place of places) {
           try {
-            await strapi
-              .service('api::place.place')
-              .syncToQdrant(place.documentId)
-            synced++
+            await strapi.service('api::place.place').syncToQdrant(place.documentId);
+            synced++;
           } catch (error) {
-            strapi.log.error(`Failed to sync place ${place.documentId}:`, error)
-            failed++
+            strapi.log.error(`Failed to sync place ${place.documentId}:`, error);
+            failed++;
           }
         }
 
@@ -302,10 +293,10 @@ export default factories.createCoreController(
           synced,
           failed,
           total: places.length,
-        }
+        };
       } catch (error: any) {
-        strapi.log.error('Sync all controller error:', error)
-        ctx.throw(500, 'Sync all failed', {details: error.message})
+        strapi.log.error('Sync all controller error:', error);
+        ctx.throw(500, 'Sync all failed', { details: error.message });
       }
     },
 
@@ -321,28 +312,28 @@ export default factories.createCoreController(
         const places = await strapi.documents('api::place.place').findMany({
           status: 'published',
           populate: {
-            category_places: {fields: ['name', 'slug']},
+            category_places: { fields: ['name', 'slug'] },
             general_info: {
               populate: {
                 address: {
                   populate: {
-                    province: {fields: ['codename']},
-                    district: {fields: ['codename']},
-                    ward: {fields: ['codename']},
+                    province: { fields: ['codename'] },
+                    district: { fields: ['codename'] },
+                    ward: { fields: ['codename'] },
                   },
                 },
                 rating: true,
               },
             },
-            services: {fields: ['service_name', 'service_group_name']},
+            services: { fields: ['service_name', 'service_group_name'] },
           },
-        })
+        });
 
-        const meiliService = strapi.service('api::place.meili')
-        await meiliService.initIndex()
+        const meiliService = strapi.service('api::place.meili');
+        await meiliService.initIndex();
 
         const docs = places.map((p: any) => {
-          const categories = (p.category_places || []).map((c: any) => c.slug || c.name)
+          const categories = (p.category_places || []).map((c: any) => c.slug || c.name);
           const serviceNames = [
             ...new Set(
               (p.services || [])
@@ -350,7 +341,7 @@ export default factories.createCoreController(
                 .filter((x: any) => x && typeof x === 'string')
                 .map((x: string) => x.trim()),
             ),
-          ]
+          ];
           const serviceGroupNames = [
             ...new Set(
               (p.services || [])
@@ -358,10 +349,10 @@ export default factories.createCoreController(
                 .filter((x: any) => x && typeof x === 'string')
                 .map((x: string) => x.trim()),
             ),
-          ]
+          ];
           const categoryNames = (p.category_places || [])
             .map((c: any) => c.name)
-            .filter((x: any) => x && typeof x === 'string')
+            .filter((x: any) => x && typeof x === 'string');
 
           return {
             documentId: p.documentId,
@@ -384,14 +375,14 @@ export default factories.createCoreController(
             },
             rating: Number(p.general_info?.rating?.score) || 0,
             quantitySold: p.quantity_sold || 0,
-          }
-        })
+          };
+        });
 
         // Batch in chunks
-        const chunkSize = 1000
+        const chunkSize = 1000;
         for (let i = 0; i < docs.length; i += chunkSize) {
-          const chunk = docs.slice(i, i + chunkSize)
-          await meiliService.upsertPlaces(chunk as any)
+          const chunk = docs.slice(i, i + chunkSize);
+          await meiliService.upsertPlaces(chunk as any);
         }
 
         ctx.body = {
@@ -399,61 +390,74 @@ export default factories.createCoreController(
           message: `Synced ${docs.length} places to Meilisearch`,
           synced: docs.length,
           total: places.length,
-        }
+        };
       } catch (error: any) {
-        strapi.log.error('Sync Meili controller error:', error)
-        ctx.throw(500, 'Sync Meili failed', {details: error.message})
+        strapi.log.error('Sync Meili controller error:', error);
+        ctx.throw(500, 'Sync Meili failed', { details: error.message });
       }
     },
   }),
-)
+);
 
 function normalizePromotionDto(p: any) {
   // Parse days of week from boolean fields
-  const daysOfWeek = []
-  if (p.application?.apply_monday) daysOfWeek.push('mon')
-  if (p.application?.apply_tuesday) daysOfWeek.push('tue')
-  if (p.application?.apply_wednesday) daysOfWeek.push('wed')
-  if (p.application?.apply_thursday) daysOfWeek.push('thu')
-  if (p.application?.apply_friday) daysOfWeek.push('fri')
-  if (p.application?.apply_saturday) daysOfWeek.push('sat')
-  if (p.application?.apply_sunday) daysOfWeek.push('sun')
+  const daysOfWeek = [];
+  if (p.application?.apply_monday) daysOfWeek.push('mon');
+  if (p.application?.apply_tuesday) daysOfWeek.push('tue');
+  if (p.application?.apply_wednesday) daysOfWeek.push('wed');
+  if (p.application?.apply_thursday) daysOfWeek.push('thu');
+  if (p.application?.apply_friday) daysOfWeek.push('fri');
+  if (p.application?.apply_saturday) daysOfWeek.push('sat');
+  if (p.application?.apply_sunday) daysOfWeek.push('sun');
 
   // Parse customer types from boolean fields
-  const customer = []
-  if (p.application?.apply_new_customer) customer.push('new')
-  if (p.application?.apply_existing_customer) customer.push('existing')
+  const customer = [];
+  if (p.application?.apply_new_customer) customer.push('new');
+  if (p.application?.apply_existing_customer) customer.push('existing');
 
   // Parse comma-separated text fields
-  const serviceIds = p.application?.service_ids 
-    ? p.application.service_ids.split(',').map((s: string) => s.trim()).filter(Boolean).map(Number)
-    : []
-  
-  const timeSlots = p.application?.time_slots 
-    ? p.application.time_slots.split(',').map((s: string) => s.trim()).filter(Boolean)
-    : []
-  
-  const blackout = p.application?.blackout_dates 
-    ? p.application.blackout_dates.split(',').map((s: string) => s.trim()).filter(Boolean)
-    : []
-  
+  const serviceIds = p.application?.service_ids
+    ? p.application.service_ids
+        .split(',')
+        .map((s: string) => s.trim())
+        .filter(Boolean)
+        .map(Number)
+    : [];
+
+  const timeSlots = p.application?.time_slots
+    ? p.application.time_slots
+        .split(',')
+        .map((s: string) => s.trim())
+        .filter(Boolean)
+    : [];
+
+  const blackout = p.application?.blackout_dates
+    ? p.application.blackout_dates
+        .split(',')
+        .map((s: string) => s.trim())
+        .filter(Boolean)
+    : [];
+
   // Birthday month: boolean field - applies if customer's birthday is in the booking month
-  const birthdayMonth = Boolean(p.application?.birthday_month)
+  const birthdayMonth = Boolean(p.application?.birthday_month);
 
   // Parse group tiers from text (format: "2:100000,3:15%")
-  const groupTiers = p.group_tiers 
-    ? p.group_tiers.split(',').map((tier: string) => {
-        const [users, discount] = tier.split(':').map((s: string) => s.trim())
-        const isPercent = discount?.includes('%')
-        return {
-          minUsers: parseInt(users),
-          discount: {
-            kind: isPercent ? 'percent' : 'fixed',
-            amount: parseInt(discount?.replace('%', ''))
-          }
-        }
-      }).filter((t: any) => !isNaN(t.minUsers))
-    : []
+  const groupTiers = p.group_tiers
+    ? p.group_tiers
+        .split(',')
+        .map((tier: string) => {
+          const [users, discount] = tier.split(':').map((s: string) => s.trim());
+          const isPercent = discount?.includes('%');
+          return {
+            minUsers: parseInt(users),
+            discount: {
+              kind: isPercent ? 'percent' : 'fixed',
+              amount: parseInt(discount?.replace('%', '')),
+            },
+          };
+        })
+        .filter((t: any) => !isNaN(t.minUsers))
+    : [];
 
   return {
     id: p.id,
@@ -477,13 +481,14 @@ function normalizePromotionDto(p: any) {
       blackout,
       customer,
       bookingValue: {
-        min: p.application?.booking_value_min != null ? Number(p.application.booking_value_min) : null,
-        max: p.application?.booking_value_max != null ? Number(p.application.booking_value_max) : null,
+        min:
+          p.application?.booking_value_min != null ? Number(p.application.booking_value_min) : null,
+        max:
+          p.application?.booking_value_max != null ? Number(p.application.booking_value_max) : null,
       },
       birthdayMonth,
     },
     tnc: p.tnc_text || '',
     status: p.status,
-  }
+  };
 }
-

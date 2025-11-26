@@ -19,10 +19,7 @@
     },
     "status_item": {
       "type": "enumeration",
-      "enum": [
-        "Đã xác nhận",
-        "Đã hủy"
-      ]
+      "enum": ["Đã xác nhận", "Đã hủy"]
     },
     "user_name": {
       "type": "string"
@@ -42,12 +39,7 @@
     },
     "payment_methods": {
       "type": "enumeration",
-      "enum": [
-        "Thẻ tín dụng",
-        "Chuyển khoản",
-        "Tiền mặt",
-        "Ví điện tử"
-      ]
+      "enum": ["Thẻ tín dụng", "Chuyển khoản", "Tiền mặt", "Ví điện tử"]
     },
     "promotions": {
       "type": "json"

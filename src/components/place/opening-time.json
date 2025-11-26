@@ -9,15 +9,7 @@
   "attributes": {
     "day": {
       "type": "enumeration",
-      "enum": [
-        "Thứ Hai",
-        "Thứ Ba",
-        "Thứ Tư",
-        "Thứ Năm",
-        "Thứ Sáu",
-        "Thứ Bảy",
-        "Chủ Nhật"
-      ]
+      "enum": ["Thứ Hai", "Thứ Ba", "Thứ Tư", "Thứ Năm", "Thứ Sáu", "Thứ Bảy", "Chủ Nhật"]
     },
     "open_time": {
       "type": "time"

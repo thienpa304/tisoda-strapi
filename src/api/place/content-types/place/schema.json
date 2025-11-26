@@ -27,11 +27,7 @@
     "tip": {
       "type": "customField",
       "customField": "global::multi-select",
-      "enum": [
-        "included",
-        "optional",
-        "required"
-      ],
+      "enum": ["included", "optional", "required"],
       "name": "Tip",
       "required": false
     },

@@ -14,13 +14,13 @@ module.exports = {
         NODE_ENV: 'production',
         HOST: '0.0.0.0',
         PORT: 1337,
-        NODE_OPTIONS: '--max-old-space-size=2048' // Tối ưu Node.js memory
+        NODE_OPTIONS: '--max-old-space-size=2048', // Tối ưu Node.js memory
       },
       error_file: './logs/pm2-error.log',
       out_file: './logs/pm2-out.log',
       log_date_format: 'YYYY-MM-DD HH:mm:ss Z',
       merge_logs: true,
-      time: true
-    }
-  ]
+      time: true,
+    },
+  ],
 };

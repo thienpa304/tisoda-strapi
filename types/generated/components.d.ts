@@ -154,10 +154,7 @@ export interface HomepageMainCategoryItem extends Struct.ComponentSchema {
     icon: 'bulletList';
   };
   attributes: {
-    category_place: Schema.Attribute.Relation<
-      'oneToOne',
-      'api::category-place.category-place'
-    >;
+    category_place: Schema.Attribute.Relation<'oneToOne', 'api::category-place.category-place'>;
     name: Schema.Attribute.String;
     thumbnail: Schema.Attribute.Media<'images' | 'files' | 'videos' | 'audios'>;
   };
@@ -201,15 +198,11 @@ export interface PlaceGeneralInfo extends Struct.ComponentSchema {
     address: Schema.Attribute.Component<'general.address', false>;
     brief_intro: Schema.Attribute.Blocks & Schema.Attribute.Required;
     highlight: Schema.Attribute.Blocks & Schema.Attribute.Required;
-    media: Schema.Attribute.Media<
-      'images' | 'files' | 'videos' | 'audios',
-      true
-    > &
+    media: Schema.Attribute.Media<'images' | 'files' | 'videos' | 'audios', true> &
       Schema.Attribute.Required;
     opening_time: Schema.Attribute.Component<'place.opening-time', true> &
       Schema.Attribute.Required;
-    rating: Schema.Attribute.Component<'general.rating', false> &
-      Schema.Attribute.Required;
+    rating: Schema.Attribute.Component<'general.rating', false> & Schema.Attribute.Required;
   };
 }
 
@@ -273,10 +266,7 @@ export interface PlaceServices extends Struct.ComponentSchema {
   attributes: {
     description: Schema.Attribute.Blocks;
     duration: Schema.Attribute.Integer;
-    gallery: Schema.Attribute.Media<
-      'images' | 'files' | 'videos' | 'audios',
-      true
-    > &
+    gallery: Schema.Attribute.Media<'images' | 'files' | 'videos' | 'audios', true> &
       Schema.Attribute.Required;
     price: Schema.Attribute.BigInteger & Schema.Attribute.Required;
     service_group_name: Schema.Attribute.String & Schema.Attribute.Required;

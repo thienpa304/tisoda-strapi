@@ -66,12 +66,7 @@
       "type": "media",
       "multiple": true,
       "required": true,
-      "allowedTypes": [
-        "images",
-        "files",
-        "videos",
-        "audios"
-      ]
+      "allowedTypes": ["images", "files", "videos", "audios"]
     }
   }
 }

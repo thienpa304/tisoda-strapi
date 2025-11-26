@@ -2,46 +2,46 @@
  * place service
  */
 
-import {factories} from '@strapi/strapi'
-import type {Core} from '@strapi/strapi'
-import meiliService from './meili'
+import { factories } from '@strapi/strapi';
+import type { Core } from '@strapi/strapi';
+import meiliService from './meili';
 
 // Type definitions for better type safety
 interface SearchParams {
-  query?: string
-  latitude?: number
-  longitude?: number
-  radiusKm?: number
-  city?: string
-  province?: string
-  district?: string
-  ward?: string
-  categories?: string[]
-  minRating?: number
-  sortBy?: 'relevance' | 'rating' | 'distance' | 'popular'
-  limit?: number
-  offset?: number
+  query?: string;
+  latitude?: number;
+  longitude?: number;
+  radiusKm?: number;
+  city?: string;
+  province?: string;
+  district?: string;
+  ward?: string;
+  categories?: string[];
+  minRating?: number;
+  sortBy?: 'relevance' | 'rating' | 'distance' | 'popular';
+  limit?: number;
+  offset?: number;
 }
 
 interface NearbySearchParams {
-  latitude: number
-  longitude: number
-  radiusKm?: number
-  categories?: string[]
-  minRating?: number
-  limit?: number
+  latitude: number;
+  longitude: number;
+  radiusKm?: number;
+  categories?: string[];
+  minRating?: number;
+  limit?: number;
 }
 
 interface PlaceWithScore {
-  id: number
-  searchScore: number
-  distance: number | null
-  [key: string]: any
+  id: number;
+  searchScore: number;
+  distance: number | null;
+  [key: string]: any;
 }
 
 export default factories.createCoreService(
   'api::place.place',
-  ({strapi}: {strapi: Core.Strapi}) => ({
+  ({ strapi }: { strapi: Core.Strapi }) => ({
     /**
      * Search places with vector similarity and geo-spatial filtering
      * Similar to GrabFood search functionality
@@ -62,15 +62,11 @@ export default factories.createCoreService(
           sortBy = 'relevance',
           limit = 20,
           offset = 0,
-        } = params
+        } = params;
 
         // Perform keyword search with Meilisearch - optimized for exact service matching
         const meiliSort =
-          sortBy === 'rating'
-            ? 'rating'
-            : sortBy === 'popular'
-              ? 'popular'
-              : undefined
+          sortBy === 'rating' ? 'rating' : sortBy === 'popular' ? 'popular' : undefined;
         const meiliResult = await meiliService.search({
           query,
           categories,
@@ -82,26 +78,24 @@ export default factories.createCoreService(
           offset: 0,
           sortBy: meiliSort as any,
           sortOrder: 'desc',
-        })
+        });
 
-        const hits = meiliResult.hits || []
-        const totalHits = meiliResult.totalHits || hits.length
+        const hits = meiliResult.hits || [];
+        const totalHits = meiliResult.totalHits || hits.length;
 
         strapi.log.info(
           `🔍 Meilisearch results: ${hits.length} places found for query: "${query}" (total: ${totalHits})`,
-        )
+        );
 
         // Get full place details from Strapi
-        const placeIds = hits.map((r: any) => String(r.documentId))
+        const placeIds = hits.map((r: any) => String(r.documentId));
 
         if (placeIds.length === 0) {
-          strapi.log.warn(
-            `⚠️ No places found in Meilisearch for query: "${query}"`,
-          )
-          return {data: [], meta: {total: 0, limit, offset, sortBy}}
+          strapi.log.warn(`⚠️ No places found in Meilisearch for query: "${query}"`);
+          return { data: [], meta: { total: 0, limit, offset, sortBy } };
         }
 
-        strapi.log.info(`📍 Found place IDs: ${placeIds.join(', ')}`)
+        strapi.log.info(`📍 Found place IDs: ${placeIds.join(', ')}`);
 
         const places = await strapi.documents('api::place.place').findMany({
           filters: {
@@ -150,79 +144,66 @@ export default factories.createCoreService(
           },
 
           status: 'published',
-        })
-        console.log(places.length, 'places')
-        strapi.log.debug(
-          `Found ${places.length} places matching search criteria`,
-        )
+        });
+        console.log(places.length, 'places');
+        strapi.log.debug(`Found ${places.length} places matching search criteria`);
 
         // Map results with scores, optimized for exact service matching
         const placesWithScore: PlaceWithScore[] = places.map((place: any) => {
-          const hit = hits.find((r: any) => r.documentId === place.documentId)
-          const hitIndex = hits.findIndex(
-            (r: any) => r.documentId === place.documentId,
-          )
+          const hit = hits.find((r: any) => r.documentId === place.documentId);
+          const hitIndex = hits.findIndex((r: any) => r.documentId === place.documentId);
 
           // Calculate relevance score with emphasis on exact service matches
-          let relevanceScore = 1
+          let relevanceScore = 1;
           if (hitIndex >= 0) {
             // Base score from MeiliSearch position
-            relevanceScore = Math.max(0.1, 1 - hitIndex * 0.05)
+            relevanceScore = Math.max(0.1, 1 - hitIndex * 0.05);
 
             if (query) {
-              const queryLower = query.toLowerCase()
+              const queryLower = query.toLowerCase();
 
               // Check for exact service name matches (highest priority)
               const exactServiceMatch = place.services?.some(
-                (service: any) =>
-                  service.service_name?.toLowerCase() === queryLower,
-              )
+                (service: any) => service.service_name?.toLowerCase() === queryLower,
+              );
               if (exactServiceMatch) {
-                relevanceScore += 2.0 // Very high boost for exact service match
+                relevanceScore += 2.0; // Very high boost for exact service match
               }
 
               // Check for service name contains query (high priority)
-              const serviceContainsMatch = place.services?.some(
-                (service: any) =>
-                  service.service_name?.toLowerCase().includes(queryLower),
-              )
+              const serviceContainsMatch = place.services?.some((service: any) =>
+                service.service_name?.toLowerCase().includes(queryLower),
+              );
               if (serviceContainsMatch) {
-                relevanceScore += 1.5 // High boost for service contains
+                relevanceScore += 1.5; // High boost for service contains
               }
 
               // Check for place name exact match
               if (place.name?.toLowerCase() === queryLower) {
-                relevanceScore += 1.0
+                relevanceScore += 1.0;
               }
 
               // Check for place name contains query
               if (place.name?.toLowerCase().includes(queryLower)) {
-                relevanceScore += 0.5
+                relevanceScore += 0.5;
               }
 
               // Check for place name starts with query
               if (place.name?.toLowerCase().startsWith(queryLower)) {
-                relevanceScore += 0.3
+                relevanceScore += 0.3;
               }
 
               // Penalty for very loose matches (reduce noise)
-              const hasRelevantServices = place.services?.some(
-                (service: any) => {
-                  const serviceName = service.service_name?.toLowerCase() || ''
-                  return (
-                    serviceName.includes(queryLower) ||
-                    queryLower
-                      .split(' ')
-                      .some((word) => serviceName.includes(word))
-                  )
-                },
-              )
+              const hasRelevantServices = place.services?.some((service: any) => {
+                const serviceName = service.service_name?.toLowerCase() || '';
+                return (
+                  serviceName.includes(queryLower) ||
+                  queryLower.split(' ').some((word) => serviceName.includes(word))
+                );
+              });
 
-              if (
-                !hasRelevantServices &&
-                !place.name?.toLowerCase().includes(queryLower)
-              ) {
-                relevanceScore *= 0.3 // Heavy penalty for irrelevant results
+              if (!hasRelevantServices && !place.name?.toLowerCase().includes(queryLower)) {
+                relevanceScore *= 0.3; // Heavy penalty for irrelevant results
               }
             }
           }
@@ -236,131 +217,123 @@ export default factories.createCoreService(
               place.general_info?.address?.latitude,
               place.general_info?.address?.longitude,
             ),
-          }
-        })
+          };
+        });
 
         // Sort results
-        let sortedPlaces = placesWithScore
+        let sortedPlaces = placesWithScore;
         switch (sortBy) {
           case 'rating':
             sortedPlaces = placesWithScore.sort(
-              (a, b) =>
-                (b.general_info?.rating?.score || 0) -
-                (a.general_info?.rating?.score || 0),
-            )
-            break
+              (a, b) => (b.general_info?.rating?.score || 0) - (a.general_info?.rating?.score || 0),
+            );
+            break;
           case 'distance':
             sortedPlaces = placesWithScore.sort(
               (a, b) => (a.distance || Infinity) - (b.distance || Infinity),
-            )
-            break
+            );
+            break;
           case 'popular':
             sortedPlaces = placesWithScore.sort(
               (a, b) => (b.quantity_sold || 0) - (a.quantity_sold || 0),
-            )
-            break
+            );
+            break;
           case 'relevance':
           default:
             sortedPlaces = placesWithScore.sort((a, b) => {
               // First sort by search score (relevance)
-              const scoreDiff = b.searchScore - a.searchScore
+              const scoreDiff = b.searchScore - a.searchScore;
               if (Math.abs(scoreDiff) > 0.01) {
-                return scoreDiff
+                return scoreDiff;
               }
 
               // If scores are similar, prioritize exact service matches
               if (query) {
-                const queryLower = query.toLowerCase()
+                const queryLower = query.toLowerCase();
 
                 // Check for exact service matches (highest priority)
                 const aExactService = a.services?.some(
-                  (service: any) =>
-                    service.service_name?.toLowerCase() === queryLower,
-                )
+                  (service: any) => service.service_name?.toLowerCase() === queryLower,
+                );
                 const bExactService = b.services?.some(
-                  (service: any) =>
-                    service.service_name?.toLowerCase() === queryLower,
-                )
+                  (service: any) => service.service_name?.toLowerCase() === queryLower,
+                );
 
-                if (aExactService && !bExactService) return -1
-                if (!aExactService && bExactService) return 1
+                if (aExactService && !bExactService) return -1;
+                if (!aExactService && bExactService) return 1;
 
                 // Check for service contains matches
                 const aServiceContains = a.services?.some((service: any) =>
                   service.service_name?.toLowerCase().includes(queryLower),
-                )
+                );
                 const bServiceContains = b.services?.some((service: any) =>
                   service.service_name?.toLowerCase().includes(queryLower),
-                )
+                );
 
-                if (aServiceContains && !bServiceContains) return -1
-                if (!aServiceContains && bServiceContains) return 1
+                if (aServiceContains && !bServiceContains) return -1;
+                if (!aServiceContains && bServiceContains) return 1;
 
                 // Check for exact place name matches
-                const aExactName = a.name?.toLowerCase() === queryLower
-                const bExactName = b.name?.toLowerCase() === queryLower
+                const aExactName = a.name?.toLowerCase() === queryLower;
+                const bExactName = b.name?.toLowerCase() === queryLower;
 
-                if (aExactName && !bExactName) return -1
-                if (!aExactName && bExactName) return 1
+                if (aExactName && !bExactName) return -1;
+                if (!aExactName && bExactName) return 1;
 
                 // Check for place name contains
-                const aNameContains = a.name?.toLowerCase().includes(queryLower)
-                const bNameContains = b.name?.toLowerCase().includes(queryLower)
+                const aNameContains = a.name?.toLowerCase().includes(queryLower);
+                const bNameContains = b.name?.toLowerCase().includes(queryLower);
 
-                if (aNameContains && !bNameContains) return -1
-                if (!aNameContains && bNameContains) return 1
+                if (aNameContains && !bNameContains) return -1;
+                if (!aNameContains && bNameContains) return 1;
               }
 
               // Finally by rating as tiebreaker
-              return (
-                (b.general_info?.rating?.score || 0) -
-                (a.general_info?.rating?.score || 0)
-              )
-            })
-            break
+              return (b.general_info?.rating?.score || 0) - (a.general_info?.rating?.score || 0);
+            });
+            break;
         }
 
         // Filter out irrelevant results for better accuracy
         const filteredResults = sortedPlaces.filter((place) => {
-          if (!query) return true
+          if (!query) return true;
 
-          const queryLower = query.toLowerCase()
+          const queryLower = query.toLowerCase();
 
           // Keep results with high relevance scores
-          if (place.searchScore > 2.0) return true
+          if (place.searchScore > 2.0) return true;
 
           // Keep results with exact service matches
           const hasExactService = place.services?.some(
-            (service: any) =>
-              service.service_name?.toLowerCase() === queryLower,
-          )
-          if (hasExactService) return true
+            (service: any) => service.service_name?.toLowerCase() === queryLower,
+          );
+          if (hasExactService) return true;
 
           // Keep results with service contains matches
           const hasServiceContains = place.services?.some((service: any) =>
             service.service_name?.toLowerCase().includes(queryLower),
-          )
-          if (hasServiceContains) return true
+          );
+          if (hasServiceContains) return true;
 
           // Keep results with place name matches
-          const hasNameMatch = place.name?.toLowerCase().includes(queryLower)
-          if (hasNameMatch) return true
+          const hasNameMatch = place.name?.toLowerCase().includes(queryLower);
+          if (hasNameMatch) return true;
 
           // Keep results with at least one word match in services
           const hasWordMatch = place.services?.some((service: any) => {
-            const serviceName = service.service_name?.toLowerCase() || ''
+            const serviceName = service.service_name?.toLowerCase() || '';
             return queryLower
               .split(' ')
-              .some((word) => word.length > 2 && serviceName.includes(word))
-          })
-          if (hasWordMatch) return true
+              .some((word) => word.length > 2 && serviceName.includes(word));
+          });
+          if (hasWordMatch) return true;
 
           // Filter out results with very low relevance
-          return place.searchScore > 0.5
-        })
+          return place.searchScore > 0.5;
+        });
 
         // Apply pagination after filtering
-        const paginatedResults = filteredResults.slice(offset, offset + limit)
+        const paginatedResults = filteredResults.slice(offset, offset + limit);
 
         return {
           data: paginatedResults,
@@ -370,10 +343,10 @@ export default factories.createCoreService(
             offset,
             sortBy,
           },
-        }
+        };
       } catch (error) {
-        strapi.log.error('Search error:', error)
-        throw error
+        strapi.log.error('Search error:', error);
+        throw error;
       }
     },
 
@@ -383,10 +356,10 @@ export default factories.createCoreService(
     async searchNearby(params: NearbySearchParams) {
       try {
         // TODO: Implement nearby search using MeiliSearch or other service
-        const placeIds: string[] = []
+        const placeIds: string[] = [];
 
         if (placeIds.length === 0) {
-          return {data: [], meta: {total: 0}}
+          return { data: [], meta: { total: 0 } };
         }
 
         const places = await strapi.documents('api::place.place').findMany({
@@ -430,17 +403,17 @@ export default factories.createCoreService(
               fields: ['service_name', 'service_group_name', 'price', 'duration', 'description'],
             },
           },
-        })
+        });
 
-        strapi.log.debug(`Found ${places.length} nearby places`)
+        strapi.log.debug(`Found ${places.length} nearby places`);
 
         return {
           data: places,
-          meta: {total: places.length},
-        }
+          meta: { total: places.length },
+        };
       } catch (error) {
-        strapi.log.error('Nearby search error:', error)
-        throw error
+        strapi.log.error('Nearby search error:', error);
+        throw error;
       }
     },
 
@@ -450,12 +423,12 @@ export default factories.createCoreService(
     async getRecommendations(documentId: string, limit: number = 10) {
       try {
         // TODO: Implement recommendations using MeiliSearch or other service
-        const results: any[] = []
+        const results: any[] = [];
 
-        const placeIds = results.map((r: any) => String(r.documentId))
+        const placeIds = results.map((r: any) => String(r.documentId));
 
         if (placeIds.length === 0) {
-          return {data: [], meta: {total: 0}}
+          return { data: [], meta: { total: 0 } };
         }
 
         const places = await strapi.documents('api::place.place').findMany({
@@ -465,48 +438,41 @@ export default factories.createCoreService(
             },
           },
           status: 'published',
-        })
+        });
 
-        strapi.log.debug(
-          `Found ${places.length} recommendations for place ${documentId}`,
-        )
+        strapi.log.debug(`Found ${places.length} recommendations for place ${documentId}`);
 
         return {
           data: places,
-          meta: {total: places.length},
-        }
+          meta: { total: places.length },
+        };
       } catch (error) {
-        strapi.log.error('Recommendations error:', error)
-        throw error
+        strapi.log.error('Recommendations error:', error);
+        throw error;
       }
     },
 
     /**
      * Calculate distance between two coordinates (Haversine formula)
      */
-    calculateDistance(
-      lat1?: number,
-      lon1?: number,
-      lat2?: number,
-      lon2?: number,
-    ): number | null {
-      if (!lat1 || !lon1 || !lat2 || !lon2) return null
+    calculateDistance(lat1?: number, lon1?: number, lat2?: number, lon2?: number): number | null {
+      if (!lat1 || !lon1 || !lat2 || !lon2) return null;
 
-      const R = 6371 // Earth's radius in km
-      const dLat = this.toRad(lat2 - lat1)
-      const dLon = this.toRad(lon2 - lon1)
+      const R = 6371; // Earth's radius in km
+      const dLat = this.toRad(lat2 - lat1);
+      const dLon = this.toRad(lon2 - lon1);
       const a =
         Math.sin(dLat / 2) * Math.sin(dLat / 2) +
         Math.cos(this.toRad(lat1)) *
           Math.cos(this.toRad(lat2)) *
           Math.sin(dLon / 2) *
-          Math.sin(dLon / 2)
-      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
-      return R * c
+          Math.sin(dLon / 2);
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+      return R * c;
     },
 
     toRad(degrees: number): number {
-      return degrees * (Math.PI / 180)
+      return degrees * (Math.PI / 180);
     },
 
     /**
@@ -524,9 +490,9 @@ export default factories.createCoreService(
               populate: {
                 address: {
                   populate: {
-                    province: {fields: ['codename']},
-                    district: {fields: ['codename']},
-                    ward: {fields: ['codename']},
+                    province: { fields: ['codename'] },
+                    district: { fields: ['codename'] },
+                    ward: { fields: ['codename'] },
                   },
                 },
                 rating: true,
@@ -537,25 +503,21 @@ export default factories.createCoreService(
             },
           },
           status: 'published',
-        })
+        });
 
         if (!place) {
           // If place not found or not published, delete from Meili
-          const meiliService = strapi.service('api::place.meili')
-          await meiliService.deletePlace(placeDocumentId)
-          strapi.log.info(
-            `❌ Place ${placeDocumentId} deleted from Meilisearch`,
-          )
-          return
+          const meiliService = strapi.service('api::place.meili');
+          await meiliService.deletePlace(placeDocumentId);
+          strapi.log.info(`❌ Place ${placeDocumentId} deleted from Meilisearch`);
+          return;
         }
 
-        const meiliService = strapi.service('api::place.meili')
-        await meiliService.initIndex()
+        const meiliService = strapi.service('api::place.meili');
+        await meiliService.initIndex();
 
         // Map to Meili document format
-        const categories = (place.category_places || []).map(
-          (c: any) => c.slug || c.name,
-        )
+        const categories = (place.category_places || []).map((c: any) => c.slug || c.name);
         const serviceNames = [
           ...new Set(
             (place.services || [])
@@ -563,7 +525,7 @@ export default factories.createCoreService(
               .filter((x: any) => x && typeof x === 'string')
               .map((x: string) => x.trim()),
           ),
-        ]
+        ];
         const serviceGroupNames = [
           ...new Set(
             (place.services || [])
@@ -571,10 +533,10 @@ export default factories.createCoreService(
               .filter((x: any) => x && typeof x === 'string')
               .map((x: string) => x.trim()),
           ),
-        ]
+        ];
         const categoryNames = (place.category_places || [])
           .map((c: any) => c.name)
-          .filter((x: any) => x && typeof x === 'string')
+          .filter((x: any) => x && typeof x === 'string');
 
         const doc = {
           documentId: place.documentId,
@@ -597,19 +559,16 @@ export default factories.createCoreService(
           },
           rating: Number(place.general_info?.rating?.score) || 0,
           quantitySold: place.quantity_sold || 0,
-        }
+        };
 
-        await meiliService.upsertPlace(doc as any)
+        await meiliService.upsertPlace(doc as any);
 
         strapi.log.info(
           `✅ Place ${placeDocumentId} synced to Meilisearch with services: [${serviceNames.join(', ')}]`,
-        )
+        );
       } catch (error) {
-        strapi.log.error(
-          `Failed to sync place ${placeDocumentId} to Meilisearch:`,
-          error,
-        )
-        throw error
+        strapi.log.error(`Failed to sync place ${placeDocumentId} to Meilisearch:`, error);
+        throw error;
       }
     },
 
@@ -628,9 +587,9 @@ export default factories.createCoreService(
               populate: {
                 address: {
                   populate: {
-                    province: {fields: ['name', 'codename']},
-                    district: {fields: ['name', 'codename']},
-                    ward: {fields: ['name', 'codename']},
+                    province: { fields: ['name', 'codename'] },
+                    district: { fields: ['name', 'codename'] },
+                    ward: { fields: ['name', 'codename'] },
                   },
                 },
                 rating: true,
@@ -641,50 +600,43 @@ export default factories.createCoreService(
             },
           },
           status: 'published',
-        })
+        });
 
         if (!place) {
           // TODO: Delete from MeiliSearch if needed
-          return
+          return;
         }
-        strapi.log.info(`place id: ${place.id}`)
+        strapi.log.info(`place id: ${place.id}`);
         // Extract categories - use slug for better API compatibility
-        const categories =
-          place.category_places?.map((cat: any) => cat.slug || cat.name) || []
+        const categories = place.category_places?.map((cat: any) => cat.slug || cat.name) || [];
 
         // Extract service data with better filtering and deduplication
         const serviceNames: string[] = [
           ...new Set(
             (place.services || [])
               .map((s: any) => s.service_name)
-              .filter(
-                (name: any) =>
-                  name && typeof name === 'string' && name.trim().length > 0,
-              )
+              .filter((name: any) => name && typeof name === 'string' && name.trim().length > 0)
               .map((name: string) => name.trim()),
           ),
-        ] as string[]
+        ] as string[];
 
         const serviceGroupNames: string[] = [
           ...new Set(
             (place.services || [])
               .map((s: any) => s.service_group_name)
-              .filter(
-                (name: any) =>
-                  name && typeof name === 'string' && name.trim().length > 0,
-              )
+              .filter((name: any) => name && typeof name === 'string' && name.trim().length > 0)
               .map((name: string) => name.trim()),
           ),
-        ] as string[]
+        ] as string[];
 
         const categoryNames: string[] = (place.category_places || [])
           .map((c: any) => c.name)
-          .filter((name: any) => name && typeof name === 'string') as string[]
+          .filter((name: any) => name && typeof name === 'string') as string[];
 
         // Extract location data
-        const province = place.general_info?.address?.province?.codename || ''
-        const district = place.general_info?.address?.district?.codename || ''
-        const ward = place.general_info?.address?.ward?.codename || ''
+        const province = place.general_info?.address?.province?.codename || '';
+        const district = place.general_info?.address?.district?.codename || '';
+        const ward = place.general_info?.address?.ward?.codename || '';
 
         // Prepare data for Qdrant
         const placeVector = {
@@ -706,20 +658,17 @@ export default factories.createCoreService(
           serviceNames,
           serviceGroupNames,
           categoryNames,
-        }
+        };
 
         // TODO: Upsert to MeiliSearch if needed
 
         strapi.log.info(
           `✅ Place ${placeDocumentId} (ID: ${place.id}) synced to MeiliSearch with services: [${serviceNames.join(', ')}]`,
-        )
+        );
       } catch (error) {
-        strapi.log.error(
-          `Failed to sync place ${placeDocumentId} to MeiliSearch:`,
-          error,
-        )
-        throw error
+        strapi.log.error(`Failed to sync place ${placeDocumentId} to MeiliSearch:`, error);
+        throw error;
       }
     },
   }),
-)
+);

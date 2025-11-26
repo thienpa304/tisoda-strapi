@@ -15,7 +15,14 @@
     },
     "type": {
       "type": "enumeration",
-      "enum": ["customized", "happy_hour", "group", "new_customer", "free_gift", "quantity_discount"],
+      "enum": [
+        "customized",
+        "happy_hour",
+        "group",
+        "new_customer",
+        "free_gift",
+        "quantity_discount"
+      ],
       "required": true
     },
     "stacking": {
@@ -73,4 +80,3 @@
     }
   }
 }
-

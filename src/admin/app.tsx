@@ -107,4 +107,3 @@ export default {
     // bootstrap code here if needed
   },
 };
-

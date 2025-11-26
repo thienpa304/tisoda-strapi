@@ -8,12 +8,7 @@
   "attributes": {
     "method": {
       "type": "enumeration",
-      "enum": [
-        "Thẻ tín dụng",
-        "Chuyển khoản",
-        "Tiền mặt",
-        "Ví điện tử"
-      ],
+      "enum": ["Thẻ tín dụng", "Chuyển khoản", "Tiền mặt", "Ví điện tử"],
       "default": "Tiền mặt"
     }
   }

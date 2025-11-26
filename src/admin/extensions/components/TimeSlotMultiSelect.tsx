@@ -31,7 +31,10 @@ const generateTimeSlots = (interval = 30, startHour = 0, endHour = 23) => {
   return slots;
 };
 
-export const TimeSlotMultiSelectInput = React.forwardRef<HTMLInputElement, TimeSlotMultiSelectProps>((props, ref) => {
+export const TimeSlotMultiSelectInput = React.forwardRef<
+  HTMLInputElement,
+  TimeSlotMultiSelectProps
+>((props, ref) => {
   const {
     name,
     value = [],
@@ -46,16 +49,16 @@ export const TimeSlotMultiSelectInput = React.forwardRef<HTMLInputElement, TimeS
   } = props;
 
   const selectedValues = Array.isArray(value) ? value : [];
-  
+
   // Read options from attribute
   const interval = attribute?.options?.interval || 30;
   const startHour = attribute?.options?.startHour || 0;
   const endHour = attribute?.options?.endHour || 23;
-  
+
   // Generate time slots dynamically based on options
   const TIME_SLOTS = useMemo(
     () => generateTimeSlots(interval, startHour, endHour),
-    [interval, startHour, endHour]
+    [interval, startHour, endHour],
   );
 
   const handleChange = (newValues: string[]) => {
@@ -82,9 +85,9 @@ export const TimeSlotMultiSelectInput = React.forwardRef<HTMLInputElement, TimeS
         onChange={handleChange}
         disabled={disabled}
         required={required}
-        customizeContent={() => 
-          selectedValues.length > 0 
-            ? `${selectedValues.length} time slot${selectedValues.length > 1 ? 's' : ''} selected` 
+        customizeContent={() =>
+          selectedValues.length > 0
+            ? `${selectedValues.length} time slot${selectedValues.length > 1 ? 's' : ''} selected`
             : 'Select time slots'
         }
       >
@@ -104,4 +107,3 @@ export const TimeSlotMultiSelectInput = React.forwardRef<HTMLInputElement, TimeS
 });
 
 TimeSlotMultiSelectInput.displayName = 'TimeSlotMultiSelectInput';
-

@@ -6,7 +6,7 @@ export default () => ({
       sizeLimit: 250 * 1024 * 1024, // 250MB
       providerOptions: {
         localServer: {
-          maxage: 86400000 // 1 day = 24 hours cache for better performance
+          maxage: 86400000, // 1 day = 24 hours cache for better performance
         },
       },
     },
@@ -23,18 +23,18 @@ export default () => ({
         contact: {
           name: 'API Support',
           email: 'support@tisoda.com',
-          url: 'https://tisoda.com/support'
+          url: 'https://tisoda.com/support',
         },
         license: {
           name: 'Apache 2.0',
-          url: 'https://www.apache.org/licenses/LICENSE-2.0.html'
+          url: 'https://www.apache.org/licenses/LICENSE-2.0.html',
         },
       },
       'x-strapi-config': {
         // Add your API token here for authentication in Swagger UI
         // plugins: ['users-permissions'],
         path: '/documentation',
-        
+
         // Custom routes documentation - imported from config/documentation.ts
         mutateDocumentation: customRoutesDocs,
       },

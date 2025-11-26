@@ -42,7 +42,7 @@ async function fetchAllProvinces(): Promise<Province[]> {
   if (!response.ok) {
     throw new Error(`HTTP error! status: ${response.status}`);
   }
-  return await response.json() as Province[];
+  return (await response.json()) as Province[];
 }
 
 async function fetchAllDistricts(): Promise<District[]> {
@@ -50,7 +50,7 @@ async function fetchAllDistricts(): Promise<District[]> {
   if (!response.ok) {
     throw new Error(`HTTP error! status: ${response.status}`);
   }
-  return await response.json() as District[];
+  return (await response.json()) as District[];
 }
 
 async function fetchAllWards(): Promise<Ward[]> {
@@ -58,7 +58,7 @@ async function fetchAllWards(): Promise<Ward[]> {
   if (!response.ok) {
     throw new Error(`HTTP error! status: ${response.status}`);
   }
-  return await response.json() as Ward[];
+  return (await response.json()) as Ward[];
 }
 
 /**
@@ -67,12 +67,12 @@ async function fetchAllWards(): Promise<Ward[]> {
 async function upsert(
   uid: string,
   filters: any,
-  data: any
+  data: any,
 ): Promise<{ id: any; created: boolean }> {
-  const existing = await strapi.entityService.findMany(uid as any, {
+  const existing = (await strapi.entityService.findMany(uid as any, {
     filters,
     limit: 1,
-  }) as any[];
+  })) as any[];
 
   if (existing.length === 0) {
     const created = await strapi.entityService.create(uid as any, { data });
@@ -87,7 +87,7 @@ export default {
   async seed(ctx) {
     const startTime = Date.now();
     const logs: string[] = [];
-    
+
     try {
       logs.push('🌱 Starting to seed provinces, districts, and wards data...');
 
@@ -98,14 +98,14 @@ export default {
         fetchAllDistricts(),
         fetchAllWards(),
       ]);
-      
+
       logs.push(`✅ Found ${provinces.length} provinces`);
       logs.push(`✅ Found ${allDistricts.length} districts`);
       logs.push(`✅ Found ${allWards.length} wards`);
 
       // Group districts by province_code for faster lookup
       const districtsByProvince = new Map<number, District[]>();
-      allDistricts.forEach(district => {
+      allDistricts.forEach((district) => {
         if (!districtsByProvince.has(district.province_code)) {
           districtsByProvince.set(district.province_code, []);
         }
@@ -114,7 +114,7 @@ export default {
 
       // Group wards by district_code for faster lookup
       const wardsByDistrict = new Map<number, Ward[]>();
-      allWards.forEach(ward => {
+      allWards.forEach((ward) => {
         if (!wardsByDistrict.has(ward.district_code)) {
           wardsByDistrict.set(ward.district_code, []);
         }
@@ -123,8 +123,8 @@ export default {
 
       // Create mapping from district_code to province for ward display_name
       const districtToProvince = new Map<number, Province>();
-      allDistricts.forEach(district => {
-        const province = provinces.find(p => p.code === district.province_code);
+      allDistricts.forEach((district) => {
+        const province = provinces.find((p) => p.code === district.province_code);
         if (province) {
           districtToProvince.set(district.code, province);
         }
@@ -149,10 +149,12 @@ export default {
             division_type: province.division_type,
             phone_code: province.phone_code,
             display_name: province.name,
-          }
+          },
         );
-        
-        logs.push(`   ${provinceCreated ? '✅ Created' : '⚠️  Updated'} province: ${province.name}`);
+
+        logs.push(
+          `   ${provinceCreated ? '✅ Created' : '⚠️  Updated'} province: ${province.name}`,
+        );
 
         // Process districts for this province
         const provinceDistricts = districtsByProvince.get(province.code) || [];
@@ -163,7 +165,7 @@ export default {
           for (const district of provinceDistricts) {
             // Upsert district
             const districtDisplayName = `${district.name} (${province.name})`;
-            
+
             const { id: districtId } = await upsert(
               'api::district.district',
               { code: district.code },
@@ -175,7 +177,7 @@ export default {
                 short_codename: district.short_codename,
                 display_name: districtDisplayName,
                 province: provinceId,
-              }
+              },
             );
 
             // Process wards for this district
@@ -189,7 +191,7 @@ export default {
               for (const ward of districtWards) {
                 // Generate display_name: "Ward Name (Province Name)"
                 const wardProvince = districtToProvince.get(ward.district_code);
-                const wardDisplayName = wardProvince 
+                const wardDisplayName = wardProvince
                   ? `${ward.name} (${wardProvince.name})`
                   : ward.name;
 
@@ -204,7 +206,7 @@ export default {
                     short_codename: ward.short_codename,
                     display_name: wardDisplayName,
                     district: districtId,
-                  }
+                  },
                 );
 
                 if (created) {
@@ -214,7 +216,9 @@ export default {
                 }
               }
 
-              logs.push(`      📄 ${district.name}: ${wardsCreated} created, ${wardsUpdated} updated (${districtWards.length} wards)`);
+              logs.push(
+                `      📄 ${district.name}: ${wardsCreated} created, ${wardsUpdated} updated (${districtWards.length} wards)`,
+              );
             }
           }
         }
@@ -223,7 +227,7 @@ export default {
       }
 
       const duration = ((Date.now() - startTime) / 1000).toFixed(2);
-      
+
       ctx.send({
         success: true,
         message: 'Seed completed successfully!',
@@ -231,19 +235,20 @@ export default {
           provinces: provinces.length,
           districts: totalDistricts,
           wards: totalWards,
-          duration: `${duration}s`
+          duration: `${duration}s`,
         },
-        logs
+        logs,
       });
-
     } catch (error) {
       logs.push(`❌ Error: ${error.message}`);
-      ctx.send({
-        success: false,
-        error: error.message,
-        logs
-      }, 500);
+      ctx.send(
+        {
+          success: false,
+          error: error.message,
+          logs,
+        },
+        500,
+      );
     }
-  }
+  },
 };
-
