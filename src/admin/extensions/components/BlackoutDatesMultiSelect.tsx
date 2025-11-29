@@ -40,9 +40,39 @@ export const BlackoutDatesMultiSelectInput = React.forwardRef<
   const [currentStart, setCurrentStart] = useState<string | null>(null);
   const [currentEnd, setCurrentEnd] = useState<string | null>(null);
 
+  // Helper function to parse date string in local timezone
+  // Create date at local noon to avoid timezone shift when DatePicker displays it
+  const parseLocalDate = (dateString: string): Date => {
+    const [year, month, day] = dateString.split('-').map(Number);
+    // Create date at local noon (12:00:00 local time) to avoid timezone issues
+    // This ensures the date won't shift to previous day when displayed
+    return new Date(year, month - 1, day, 12, 0, 0, 0);
+  };
+
+  // Helper function to normalize date from DatePicker
+  // DatePicker may return date with timezone issues, so we normalize it
+  const normalizeDate = (date: Date): Date => {
+    // Create a new date from local time components to avoid timezone issues
+    const year = date.getFullYear();
+    const month = date.getMonth();
+    const day = date.getDate();
+    return new Date(year, month, day, 12, 0, 0, 0);
+  };
+
+  // Helper function to format date from DatePicker to YYYY-MM-DD string
+  // Always use local time methods since DatePicker works with local dates
+  const formatDateToString = (date: Date): string => {
+    // Normalize the date first to avoid timezone issues
+    const normalized = normalizeDate(date);
+    const year = normalized.getFullYear();
+    const month = String(normalized.getMonth() + 1).padStart(2, '0');
+    const day = String(normalized.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
   const formatDate = (dateString: string | null): string => {
     if (!dateString) return '';
-    const date = new Date(dateString);
+    const date = parseLocalDate(dateString);
     const day = date.getDate();
     const month = date.toLocaleString('en-US', { month: 'short' });
     const year = date.getFullYear();
@@ -128,9 +158,13 @@ export const BlackoutDatesMultiSelectInput = React.forwardRef<
             </Typography>
             <DatePicker
               onChange={(date: Date | undefined) => {
-                setCurrentStart(date ? date.toISOString().split('T')[0] : null);
+                if (date) {
+                  setCurrentStart(formatDateToString(date));
+                } else {
+                  setCurrentStart(null);
+                }
               }}
-              value={currentStart ? new Date(currentStart) : undefined}
+              value={currentStart ? parseLocalDate(currentStart) : undefined}
               disabled={disabled}
               clearLabel="Clear"
               onClear={() => setCurrentStart(null)}
@@ -145,9 +179,13 @@ export const BlackoutDatesMultiSelectInput = React.forwardRef<
             </Typography>
             <DatePicker
               onChange={(date: Date | undefined) => {
-                setCurrentEnd(date ? date.toISOString().split('T')[0] : null);
+                if (date) {
+                  setCurrentEnd(formatDateToString(date));
+                } else {
+                  setCurrentEnd(null);
+                }
               }}
-              value={currentEnd ? new Date(currentEnd) : undefined}
+              value={currentEnd ? parseLocalDate(currentEnd) : undefined}
               disabled={disabled}
               clearLabel="Clear"
               onClear={() => setCurrentEnd(null)}
