@@ -103,7 +103,7 @@ export default factories.createCoreService(
               $in: placeIds,
             },
           },
-          fields: ['name', 'slug', 'quantity_sold'],
+          fields: ['name', 'slug', 'quantity_sold', 'tip'],
           populate: {
             category_places: {
               fields: ['name', 'slug'],
@@ -383,7 +383,7 @@ export default factories.createCoreService(
             },
           },
           status: 'published',
-          fields: ['name', 'slug', 'quantity_sold'],
+          fields: ['name', 'slug', 'quantity_sold', 'tip'],
           populate: {
             category_places: {
               fields: ['name', 'slug'],
@@ -471,7 +471,7 @@ export default factories.createCoreService(
             },
           },
           status: 'published',
-          fields: ['name', 'slug', 'quantity_sold'],
+          fields: ['name', 'slug', 'quantity_sold', 'tip'],
           populate: {
             category_places: {
               fields: ['name', 'slug'],
