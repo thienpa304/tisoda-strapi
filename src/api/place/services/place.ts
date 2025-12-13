@@ -134,17 +134,31 @@ export default factories.createCoreService(
               },
             },
             services: {
-              fields: ['service_name', 'service_group_name', 'price', 'duration', 'description'],
+              fields: [
+                'service_name',
+                'service_group_name',
+                'price',
+                'duration',
+                'description',
+                'is_best_seller',
+              ],
               populate: {
                 gallery: {
                   fields: ['url', 'alternativeText', 'width', 'height'],
                 },
               },
             },
+            promotions: {
+              populate: {
+                application: true,
+                group_tiers: true,
+                complimentary_services: true,
+              },
+            },
           },
 
           status: 'published',
-        });
+        } as any);
         console.log(places.length, 'places');
         strapi.log.debug(`Found ${places.length} places matching search criteria`);
 
@@ -400,10 +414,29 @@ export default factories.createCoreService(
               },
             },
             services: {
-              fields: ['service_name', 'service_group_name', 'price', 'duration', 'description'],
+              fields: [
+                'service_name',
+                'service_group_name',
+                'price',
+                'duration',
+                'description',
+                'is_best_seller',
+              ],
+              populate: {
+                gallery: {
+                  fields: ['url', 'alternativeText', 'width', 'height'],
+                },
+              },
+            },
+            promotions: {
+              populate: {
+                application: true,
+                group_tiers: true,
+                complimentary_services: true,
+              },
             },
           },
-        });
+        } as any);
 
         strapi.log.debug(`Found ${places.length} nearby places`);
 
@@ -438,7 +471,60 @@ export default factories.createCoreService(
             },
           },
           status: 'published',
-        });
+          fields: ['name', 'slug', 'quantity_sold'],
+          populate: {
+            category_places: {
+              fields: ['name', 'slug'],
+            },
+            general_info: {
+              fields: [],
+              populate: {
+                address: {
+                  fields: ['address', 'latitude', 'longitude'],
+                  populate: {
+                    province: {
+                      fields: ['name', 'codename'],
+                    },
+                    district: {
+                      fields: ['name', 'codename'],
+                    },
+                    ward: {
+                      fields: ['name', 'codename'],
+                    },
+                  },
+                },
+                rating: {
+                  fields: ['score', 'review_count'],
+                },
+                media: {
+                  fields: ['url', 'alternativeText', 'width', 'height'],
+                },
+              },
+            },
+            services: {
+              fields: [
+                'service_name',
+                'service_group_name',
+                'price',
+                'duration',
+                'description',
+                'is_best_seller',
+              ],
+              populate: {
+                gallery: {
+                  fields: ['url', 'alternativeText', 'width', 'height'],
+                },
+              },
+            },
+            promotions: {
+              populate: {
+                application: true,
+                group_tiers: true,
+                complimentary_services: true,
+              },
+            },
+          },
+        } as any);
 
         strapi.log.debug(`Found ${places.length} recommendations for place ${documentId}`);
 
