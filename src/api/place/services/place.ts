@@ -64,45 +64,83 @@ export default factories.createCoreService(
           offset = 0,
         } = params;
 
-        // Perform keyword search with Meilisearch - optimized for exact service matching
-        const meiliSort =
-          sortBy === 'rating' ? 'rating' : sortBy === 'popular' ? 'popular' : undefined;
-        const meiliResult = await meiliService.search({
-          query,
-          categories,
-          province,
-          district,
-          ward,
-          minRating,
-          limit: limit * 5, // Get more results for better filtering
-          offset: 0,
-          sortBy: meiliSort as any,
-          sortOrder: 'desc',
-        });
+        // If query is empty, skip Meilisearch and query Strapi directly
+        const hasQuery = query && query.trim().length > 0;
+        let placeIds: string[] = [];
+        let hits: any[] = [];
 
-        const hits = meiliResult.hits || [];
-        const totalHits = meiliResult.totalHits || hits.length;
+        if (hasQuery) {
+          // Perform keyword search with Meilisearch - optimized for exact service matching
+          const meiliSort =
+            sortBy === 'rating' ? 'rating' : sortBy === 'popular' ? 'popular' : undefined;
+          const meiliResult = await meiliService.search({
+            query,
+            categories,
+            province,
+            district,
+            ward,
+            minRating,
+            limit: limit * 5, // Get more results for better filtering
+            offset: 0,
+            sortBy: meiliSort as any,
+            sortOrder: 'desc',
+          });
 
-        strapi.log.info(
-          `🔍 Meilisearch results: ${hits.length} places found for query: "${query}" (total: ${totalHits})`,
-        );
+          hits = meiliResult.hits || [];
+          const totalHits = meiliResult.totalHits || hits.length;
 
-        // Get full place details from Strapi
-        const placeIds = hits.map((r: any) => String(r.documentId));
+          strapi.log.info(
+            `🔍 Meilisearch results: ${hits.length} places found for query: "${query}" (total: ${totalHits})`,
+          );
 
-        if (placeIds.length === 0) {
-          strapi.log.warn(`⚠️ No places found in Meilisearch for query: "${query}"`);
-          return { data: [], meta: { total: 0, limit, offset, sortBy } };
+          // Get full place details from Strapi
+          placeIds = hits.map((r: any) => String(r.documentId));
+
+          if (placeIds.length === 0) {
+            strapi.log.warn(`⚠️ No places found in Meilisearch for query: "${query}"`);
+            return { data: [], meta: { total: 0, limit, offset, sortBy } };
+          }
+        } else {
+          strapi.log.info(`🔍 No query provided, fetching all places with filters`);
         }
 
-        strapi.log.info(`📍 Found place IDs: ${placeIds.join(', ')}`);
+        if (placeIds.length > 0) {
+          strapi.log.info(`📍 Found place IDs: ${placeIds.join(', ')}`);
+        }
+
+        // Build filters for Strapi query
+        const strapiFilters: any = {};
+
+        if (placeIds.length > 0) {
+          // If we have placeIds from Meilisearch, filter by them
+          strapiFilters.documentId = {
+            $in: placeIds,
+          };
+        } else {
+          // If no query, apply filters directly
+          if (categories && categories.length > 0) {
+            strapiFilters.category_places = {
+              slug: { $in: categories },
+            };
+          }
+          if (province) {
+            strapiFilters['general_info.address.province.codename'] = province;
+          }
+          if (district) {
+            strapiFilters['general_info.address.district.codename'] = district;
+          }
+          if (ward) {
+            strapiFilters['general_info.address.ward.codename'] = ward;
+          }
+          if (typeof minRating === 'number') {
+            strapiFilters['general_info.rating.score'] = {
+              $gte: minRating,
+            };
+          }
+        }
 
         const places = await strapi.documents('api::place.place').findMany({
-          filters: {
-            documentId: {
-              $in: placeIds,
-            },
-          },
+          filters: strapiFilters,
           fields: ['name', 'slug', 'quantity_sold', 'tip'],
           populate: {
             category_places: {
