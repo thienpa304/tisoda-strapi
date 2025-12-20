@@ -13,9 +13,9 @@ interface SearchParams {
   longitude?: number;
   radiusKm?: number;
   city?: string;
-  province?: string;
-  district?: string;
-  ward?: string;
+  province?: string | string[];
+  district?: string | string[];
+  ward?: string | string[];
   categories?: string[];
   minRating?: number;
   sortBy?: 'relevance' | 'rating' | 'distance' | 'popular';
@@ -67,6 +67,9 @@ export default factories.createCoreService(
         // Always use Meilisearch for search
         const meiliSort =
           sortBy === 'rating' ? 'rating' : sortBy === 'popular' ? 'popular' : undefined;
+        // Get a larger batch to ensure we have enough results for filtering
+        // Use a reasonable max limit to avoid performance issues
+        const meiliLimit = Math.min(limit * 5, 1000);
         const meiliResult = await meiliService.search({
           query: query || '',
           categories,
@@ -74,7 +77,7 @@ export default factories.createCoreService(
           district,
           ward,
           minRating,
-          limit: limit * 5, // Get more results for better filtering
+          limit: meiliLimit, // Get more results for better filtering
           offset: 0,
           sortBy: meiliSort as any,
           sortOrder: 'desc',
@@ -358,10 +361,15 @@ export default factories.createCoreService(
         // Apply pagination after filtering
         const paginatedResults = filteredResults.slice(offset, offset + limit);
 
+        // Use totalHits from Meilisearch as the total count
+        // This represents the actual total number of matching results in the index
+        // Note: This may be slightly different from filteredResults.length if we hit the meiliLimit
+        const actualTotal = totalHits;
+
         return {
           data: paginatedResults,
           meta: {
-            total: filteredResults.length, // Use filtered results count
+            total: actualTotal, // Use totalHits from Meilisearch (actual total in index)
             limit,
             offset,
             sortBy,

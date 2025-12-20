@@ -127,9 +127,9 @@ class MeiliService {
     limit?: number;
     offset?: number;
     categories?: string[];
-    province?: string;
-    district?: string;
-    ward?: string;
+    province?: string | string[];
+    district?: string | string[];
+    ward?: string | string[];
     minRating?: number;
     sortBy?: 'rating' | 'popular';
     sortOrder?: 'asc' | 'desc';
@@ -152,9 +152,42 @@ class MeiliService {
       const inList = categories.map((c) => `"${c}"`).join(', ');
       filters.push(`categories IN [${inList}]`);
     }
-    if (province) filters.push(`province = "${province}"`);
-    if (district) filters.push(`district = "${district}"`);
-    if (ward) filters.push(`ward = "${ward}"`);
+    // Support multiple provinces
+    if (province) {
+      const provinceArray = Array.isArray(province) ? province : [province];
+      if (provinceArray.length > 0) {
+        if (provinceArray.length === 1) {
+          filters.push(`province = "${provinceArray[0]}"`);
+        } else {
+          const inList = provinceArray.map((p) => `"${p}"`).join(', ');
+          filters.push(`province IN [${inList}]`);
+        }
+      }
+    }
+    // Support multiple districts
+    if (district) {
+      const districtArray = Array.isArray(district) ? district : [district];
+      if (districtArray.length > 0) {
+        if (districtArray.length === 1) {
+          filters.push(`district = "${districtArray[0]}"`);
+        } else {
+          const inList = districtArray.map((d) => `"${d}"`).join(', ');
+          filters.push(`district IN [${inList}]`);
+        }
+      }
+    }
+    // Support multiple wards
+    if (ward) {
+      const wardArray = Array.isArray(ward) ? ward : [ward];
+      if (wardArray.length > 0) {
+        if (wardArray.length === 1) {
+          filters.push(`ward = "${wardArray[0]}"`);
+        } else {
+          const inList = wardArray.map((w) => `"${w}"`).join(', ');
+          filters.push(`ward IN [${inList}]`);
+        }
+      }
+    }
     if (typeof minRating === 'number') filters.push(`rating >= ${minRating}`);
 
     const sortParam =

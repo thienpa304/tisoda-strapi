@@ -71,9 +71,9 @@ export default factories.createCoreController(
      * - lng: longitude for geo-spatial search
      * - radius: search radius in km (default: 10)
      * - city: filter by city name
-     * - province: filter by province codename (e.g., "ho-chi-minh")
-     * - district: filter by district codename (e.g., "quan-1")
-     * - ward: filter by ward codename (e.g., "phuong-ben-nghe")
+     * - province: filter by province codename (comma-separated for multiple, e.g., "ho-chi-minh" or "ho-chi-minh,ha-noi")
+     * - district: filter by district codename (comma-separated for multiple, e.g., "quan-1" or "quan-1,quan-3")
+     * - ward: filter by ward codename (comma-separated for multiple, e.g., "phuong-ben-nghe" or "phuong-ben-nghe,phuong-da-kao")
      * - categories: filter by category IDs (comma-separated)
      * - minRating: minimum rating filter (0-5)
      * - sortBy: relevance|rating|distance|popular (default: relevance)
@@ -83,6 +83,7 @@ export default factories.createCoreController(
      * Examples:
      * - Basic search: GET /api/places/search?q=cắt tóc
      * - Location filter: GET /api/places/search?q=spa&province=ho-chi-minh&district=quan-1
+     * - Multiple districts: GET /api/places/search?q=spa&district=quan-1,quan-3,quan-7
      * - Geo search: GET /api/places/search?q=massage&lat=10.7769&lng=106.7009&radius=5
      * - Category filter: GET /api/places/search?q=beauty&categories=1,2,3
      */
@@ -109,6 +110,11 @@ export default factories.createCoreController(
           ? String(categories).split(',').filter(Boolean)
           : undefined;
 
+        // Parse district, province, ward to support multiple values (comma-separated)
+        const districtArray = district ? String(district).split(',').filter(Boolean) : undefined;
+        const provinceArray = province ? String(province).split(',').filter(Boolean) : undefined;
+        const wardArray = ward ? String(ward).split(',').filter(Boolean) : undefined;
+
         // Call service method
         const result = await strapi.service('api::place.place').search({
           query: q ? String(q) : undefined,
@@ -116,9 +122,9 @@ export default factories.createCoreController(
           longitude: lng ? parseFloat(String(lng)) : undefined,
           radiusKm: radius ? parseFloat(String(radius)) : undefined,
           city: city ? String(city) : undefined,
-          province: province ? String(province) : undefined,
-          district: district ? String(district) : undefined,
-          ward: ward ? String(ward) : undefined,
+          province: provinceArray,
+          district: districtArray,
+          ward: wardArray,
           categories: categoriesArray,
           minRating: minRating ? parseFloat(String(minRating)) : undefined,
           sortBy: sortBy ? (String(sortBy) as any) : 'relevance',
