@@ -64,80 +64,51 @@ export default factories.createCoreService(
           offset = 0,
         } = params;
 
-        // If query is empty, skip Meilisearch and query Strapi directly
-        const hasQuery = query && query.trim().length > 0;
-        let placeIds: string[] = [];
-        let hits: any[] = [];
+        // Always use Meilisearch for search
+        const meiliSort =
+          sortBy === 'rating' ? 'rating' : sortBy === 'popular' ? 'popular' : undefined;
+        const meiliResult = await meiliService.search({
+          query: query || '',
+          categories,
+          province,
+          district,
+          ward,
+          minRating,
+          limit: limit * 5, // Get more results for better filtering
+          offset: 0,
+          sortBy: meiliSort as any,
+          sortOrder: 'desc',
+        });
 
-        if (hasQuery) {
-          // Perform keyword search with Meilisearch - optimized for exact service matching
-          const meiliSort =
-            sortBy === 'rating' ? 'rating' : sortBy === 'popular' ? 'popular' : undefined;
-          const meiliResult = await meiliService.search({
-            query,
-            categories,
-            province,
-            district,
-            ward,
-            minRating,
-            limit: limit * 5, // Get more results for better filtering
-            offset: 0,
-            sortBy: meiliSort as any,
-            sortOrder: 'desc',
-          });
+        const hits = meiliResult.hits || [];
+        const totalHits = meiliResult.totalHits || hits.length;
 
-          hits = meiliResult.hits || [];
-          const totalHits = meiliResult.totalHits || hits.length;
+        strapi.log.info(
+          `🔍 Meilisearch results: ${hits.length} places found${query ? ` for query: "${query}"` : ''} (total: ${totalHits})`,
+        );
 
-          strapi.log.info(
-            `🔍 Meilisearch results: ${hits.length} places found for query: "${query}" (total: ${totalHits})`,
+        // Get full place details from Strapi
+        const placeIds = hits.map((r: any) => String(r.documentId));
+
+        if (placeIds.length === 0) {
+          strapi.log.warn(
+            `⚠️ No places found in Meilisearch${query ? ` for query: "${query}"` : ''}`,
           );
-
-          // Get full place details from Strapi
-          placeIds = hits.map((r: any) => String(r.documentId));
-
-          if (placeIds.length === 0) {
-            strapi.log.warn(`⚠️ No places found in Meilisearch for query: "${query}"`);
-            return { data: [], meta: { total: 0, limit, offset, sortBy } };
-          }
-        } else {
-          strapi.log.info(`🔍 No query provided, fetching all places with filters`);
-        }
-
-        if (placeIds.length > 0) {
-          strapi.log.info(`📍 Found place IDs: ${placeIds.join(', ')}`);
-        }
-
-        // Build filters for Strapi query
-        const strapiFilters: any = {};
-
-        if (placeIds.length > 0) {
-          // If we have placeIds from Meilisearch, filter by them
-          strapiFilters.documentId = {
-            $in: placeIds,
+          return {
+            data: [],
+            meta: { total: 0, limit, offset, sortBy },
+            facetDistribution: meiliResult.facetDistribution || {},
           };
-        } else {
-          // If no query, apply filters directly
-          if (categories && categories.length > 0) {
-            strapiFilters.category_places = {
-              slug: { $in: categories },
-            };
-          }
-          if (province) {
-            strapiFilters['general_info.address.province.codename'] = province;
-          }
-          if (district) {
-            strapiFilters['general_info.address.district.codename'] = district;
-          }
-          if (ward) {
-            strapiFilters['general_info.address.ward.codename'] = ward;
-          }
-          if (typeof minRating === 'number') {
-            strapiFilters['general_info.rating.score'] = {
-              $gte: minRating,
-            };
-          }
         }
+
+        strapi.log.info(`📍 Found place IDs: ${placeIds.join(', ')}`);
+
+        // Build filters for Strapi query - always filter by placeIds from Meilisearch
+        const strapiFilters: any = {
+          documentId: {
+            $in: placeIds,
+          },
+        };
 
         const places = await strapi.documents('api::place.place').findMany({
           filters: strapiFilters,
@@ -395,6 +366,7 @@ export default factories.createCoreService(
             offset,
             sortBy,
           },
+          facetDistribution: meiliResult.facetDistribution || {},
         };
       } catch (error) {
         strapi.log.error('Search error:', error);
@@ -614,9 +586,9 @@ export default factories.createCoreService(
               populate: {
                 address: {
                   populate: {
-                    province: { fields: ['codename'] },
-                    district: { fields: ['codename'] },
-                    ward: { fields: ['codename'] },
+                    province: { fields: ['codename', 'name'] },
+                    district: { fields: ['codename', 'name'] },
+                    ward: { fields: ['codename', 'name'] },
                   },
                 },
                 rating: true,
@@ -674,9 +646,19 @@ export default factories.createCoreService(
           categories,
           address: place.general_info?.address?.address || '',
           city: place.general_info?.address?.city || '',
+          cityFacet: place.general_info?.address?.city || '',
           province: place.general_info?.address?.province?.codename || '',
+          provinceFacet: place.general_info?.address?.province
+            ? `${place.general_info.address.province.codename || ''}|${place.general_info.address.province.name || ''}`
+            : '',
           district: place.general_info?.address?.district?.codename || '',
+          districtFacet: place.general_info?.address?.district
+            ? `${place.general_info.address.district.codename || ''}|${place.general_info.address.district.name || ''}`
+            : '',
           ward: place.general_info?.address?.ward?.codename || '',
+          wardFacet: place.general_info?.address?.ward
+            ? `${place.general_info.address.ward.codename || ''}|${place.general_info.address.ward.name || ''}`
+            : '',
           location: {
             lat: Number(place.general_info?.address?.latitude) || 0,
             lon: Number(place.general_info?.address?.longitude) || 0,

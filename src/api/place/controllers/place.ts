@@ -317,9 +317,9 @@ export default factories.createCoreController(
               populate: {
                 address: {
                   populate: {
-                    province: { fields: ['codename'] },
-                    district: { fields: ['codename'] },
-                    ward: { fields: ['codename'] },
+                    province: { fields: ['codename', 'name'] },
+                    district: { fields: ['codename', 'name'] },
+                    ward: { fields: ['codename', 'name'] },
                   },
                 },
                 rating: true,
@@ -366,9 +366,19 @@ export default factories.createCoreController(
             categories,
             address: p.general_info?.address?.address || '',
             city: p.general_info?.address?.city || '',
+            cityFacet: p.general_info?.address?.city || '',
             province: p.general_info?.address?.province?.codename || '',
+            provinceFacet: p.general_info?.address?.province
+              ? `${p.general_info.address.province.codename || ''}|${p.general_info.address.province.name || ''}`
+              : '',
             district: p.general_info?.address?.district?.codename || '',
+            districtFacet: p.general_info?.address?.district
+              ? `${p.general_info.address.district.codename || ''}|${p.general_info.address.district.name || ''}`
+              : '',
             ward: p.general_info?.address?.ward?.codename || '',
+            wardFacet: p.general_info?.address?.ward
+              ? `${p.general_info.address.ward.codename || ''}|${p.general_info.address.ward.name || ''}`
+              : '',
             location: {
               lat: Number(p.general_info?.address?.latitude) || 0,
               lon: Number(p.general_info?.address?.longitude) || 0,
@@ -394,6 +404,36 @@ export default factories.createCoreController(
       } catch (error: any) {
         strapi.log.error('Sync Meili controller error:', error);
         ctx.throw(500, 'Sync Meili failed', { details: error.message });
+      }
+    },
+
+    /**
+     * Get place documents from Meilisearch
+     * GET /api/places/meili/documents
+     *
+     * Query params:
+     * - limit: number of documents to return (default: 100)
+     * - offset: pagination offset (default: 0)
+     */
+    async getMeiliDocuments(ctx: Context) {
+      try {
+        const limit = ctx.query.limit ? parseInt(ctx.query.limit as string, 10) : 100;
+        const offset = ctx.query.offset ? parseInt(ctx.query.offset as string, 10) : 0;
+
+        const meiliService = strapi.service('api::place.meili');
+        const result = await meiliService.getDocuments({ limit, offset });
+
+        ctx.body = {
+          data: result.documents,
+          meta: {
+            total: result.total,
+            limit,
+            offset,
+          },
+        };
+      } catch (error: any) {
+        strapi.log.error('Get Meili documents error:', error);
+        ctx.throw(500, 'Failed to get Meilisearch documents', { details: error.message });
       }
     },
   }),

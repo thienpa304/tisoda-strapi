@@ -82,5 +82,15 @@ export default {
         middlewares: [],
       },
     },
+    {
+      method: 'GET',
+      path: '/places/meili/documents',
+      handler: 'api::place.place.getMeiliDocuments',
+      config: {
+        auth: false,
+        policies: [],
+        middlewares: [],
+      },
+    },
   ],
 };

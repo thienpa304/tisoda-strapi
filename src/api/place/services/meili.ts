@@ -10,9 +10,13 @@ interface MeiliPlaceDoc {
   categories?: string[];
   address?: string;
   city?: string;
+  cityFacet?: string;
   province?: string;
+  provinceFacet?: string;
   district?: string;
+  districtFacet?: string;
   ward?: string;
+  wardFacet?: string;
   location?: { lat: number; lon: number };
   rating?: number;
   quantitySold?: number;
@@ -54,7 +58,17 @@ class MeiliService {
         'district',
         'ward',
       ],
-      filterableAttributes: ['categories', 'province', 'district', 'ward', 'rating'],
+      filterableAttributes: [
+        'categories',
+        'province',
+        'district',
+        'ward',
+        'cityFacet',
+        'provinceFacet',
+        'districtFacet',
+        'wardFacet',
+        'rating',
+      ],
       sortableAttributes: ['rating', 'quantitySold'],
       rankingRules: [
         'exactness', // Exact matches get highest priority
@@ -152,15 +166,49 @@ class MeiliService {
 
     await this.ensureInit();
     const index = this.client.index(MEILI_INDEX);
+
+    // Search with filters to get actual results
     const res = await index.search<any>(query, {
       limit,
       offset,
       filter: filters.length > 0 ? filters.join(' AND ') : undefined,
       sort: sortParam,
     });
+
+    // Get facets from search without filters
+    // If there's a query, facets are based on query results
+    // If no query, facets are from all documents
+    const facetRes = await index.search<any>(query || '', {
+      limit: 0, // We only need facets, not hits
+      facets: ['cityFacet', 'provinceFacet', 'districtFacet', 'wardFacet'],
+      // No filters - facets based on query only (or all if no query)
+    });
+    const facetDistribution = facetRes.facetDistribution || {};
+
     return {
       hits: res.hits as any[],
       totalHits: res.estimatedTotalHits || res.hits.length,
+      facetDistribution,
+    };
+  }
+
+  /**
+   * Get all documents from Meilisearch
+   */
+  async getDocuments(params?: { limit?: number; offset?: number }) {
+    const { limit = 100, offset = 0 } = params || {};
+    await this.ensureInit();
+    const index = this.client.index(MEILI_INDEX);
+
+    // Search with empty query to get all documents
+    const res = await index.search<any>('', {
+      limit,
+      offset,
+    });
+
+    return {
+      documents: res.hits as MeiliPlaceDoc[],
+      total: res.estimatedTotalHits || res.hits.length,
     };
   }
 }

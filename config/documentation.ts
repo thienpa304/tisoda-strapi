@@ -446,5 +446,101 @@ export const customRoutesDocs = (generatedDocumentation: any) => {
     },
   };
 
+  // Get Meilisearch documents endpoint
+  generatedDocumentation.paths['/places/meili/documents'] = {
+    get: {
+      tags: ['Place'],
+      summary: 'Get place documents from Meilisearch',
+      description:
+        'Retrieve place documents directly from Meilisearch index. Useful for debugging and viewing indexed data.',
+      parameters: [
+        {
+          name: 'limit',
+          in: 'query',
+          description: 'Maximum number of documents to return (default: 100)',
+          required: false,
+          schema: { type: 'number', default: 100 },
+        },
+        {
+          name: 'offset',
+          in: 'query',
+          description: 'Number of documents to skip for pagination (default: 0)',
+          required: false,
+          schema: { type: 'number', default: 0 },
+        },
+      ],
+      responses: {
+        200: {
+          description: 'List of place documents from Meilisearch',
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: {
+                  data: {
+                    type: 'array',
+                    items: {
+                      type: 'object',
+                      properties: {
+                        documentId: { type: 'string' },
+                        name: { type: 'string' },
+                        description: { type: 'string' },
+                        serviceNames: {
+                          type: 'array',
+                          items: { type: 'string' },
+                        },
+                        serviceGroupNames: {
+                          type: 'array',
+                          items: { type: 'string' },
+                        },
+                        categoryNames: {
+                          type: 'array',
+                          items: { type: 'string' },
+                        },
+                        categories: {
+                          type: 'array',
+                          items: { type: 'string' },
+                        },
+                        address: { type: 'string' },
+                        city: { type: 'string' },
+                        cityFacet: { type: 'string' },
+                        province: { type: 'string' },
+                        provinceFacet: { type: 'string' },
+                        district: { type: 'string' },
+                        districtFacet: { type: 'string' },
+                        ward: { type: 'string' },
+                        wardFacet: { type: 'string' },
+                        location: {
+                          type: 'object',
+                          properties: {
+                            lat: { type: 'number' },
+                            lon: { type: 'number' },
+                          },
+                        },
+                        rating: { type: 'number' },
+                        quantitySold: { type: 'number' },
+                      },
+                    },
+                  },
+                  meta: {
+                    type: 'object',
+                    properties: {
+                      total: { type: 'number' },
+                      limit: { type: 'number' },
+                      offset: { type: 'number' },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+        500: {
+          description: 'Failed to get Meilisearch documents - Internal server error',
+        },
+      },
+    },
+  };
+
   return generatedDocumentation;
 };
