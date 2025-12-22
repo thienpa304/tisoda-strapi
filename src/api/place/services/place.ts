@@ -660,13 +660,11 @@ export default factories.createCoreService(
             ? `${place.general_info.address.province.codename || ''}|${place.general_info.address.province.name || ''}`
             : '',
           district: place.general_info?.address?.district?.codename || '',
-          districtFacet: place.general_info?.address?.district
-            ? `${place.general_info.address.district.codename || ''}|${place.general_info.address.district.name || ''}`
-            : '',
           ward: place.general_info?.address?.ward?.codename || '',
-          wardFacet: place.general_info?.address?.ward
-            ? `${place.general_info.address.ward.codename || ''}|${place.general_info.address.ward.name || ''}`
-            : '',
+          wardFacet:
+            place.general_info?.address?.ward && place.general_info?.address?.district
+              ? `${place.general_info.address.district.codename || ''}|${place.general_info.address.district.name || ''}|${place.general_info.address.ward.codename || ''}|${place.general_info.address.ward.name || ''}`
+              : '',
           location: {
             lat: Number(place.general_info?.address?.latitude) || 0,
             lon: Number(place.general_info?.address?.longitude) || 0,

@@ -507,7 +507,6 @@ export const customRoutesDocs = (generatedDocumentation: any) => {
                         province: { type: 'string' },
                         provinceFacet: { type: 'string' },
                         district: { type: 'string' },
-                        districtFacet: { type: 'string' },
                         ward: { type: 'string' },
                         wardFacet: { type: 'string' },
                         location: {

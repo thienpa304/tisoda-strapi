@@ -14,7 +14,6 @@ interface MeiliPlaceDoc {
   province?: string;
   provinceFacet?: string;
   district?: string;
-  districtFacet?: string;
   ward?: string;
   wardFacet?: string;
   location?: { lat: number; lon: number };
@@ -65,7 +64,6 @@ class MeiliService {
         'ward',
         'cityFacet',
         'provinceFacet',
-        'districtFacet',
         'wardFacet',
         'rating',
       ],
@@ -213,7 +211,7 @@ class MeiliService {
     // If no query, facets are from all documents
     const facetRes = await index.search<any>(query || '', {
       limit: 0, // We only need facets, not hits
-      facets: ['cityFacet', 'provinceFacet', 'districtFacet', 'wardFacet'],
+      facets: ['cityFacet', 'provinceFacet', 'wardFacet'],
       // No filters - facets based on query only (or all if no query)
     });
     const facetDistribution = facetRes.facetDistribution || {};

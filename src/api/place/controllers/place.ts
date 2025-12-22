@@ -378,12 +378,9 @@ export default factories.createCoreController(
               ? `${p.general_info.address.province.codename || ''}|${p.general_info.address.province.name || ''}`
               : '',
             district: p.general_info?.address?.district?.codename || '',
-            districtFacet: p.general_info?.address?.district
-              ? `${p.general_info.address.district.codename || ''}|${p.general_info.address.district.name || ''}`
-              : '',
             ward: p.general_info?.address?.ward?.codename || '',
-            wardFacet: p.general_info?.address?.ward
-              ? `${p.general_info.address.ward.codename || ''}|${p.general_info.address.ward.name || ''}`
+            wardFacet: p.general_info?.address?.ward && p.general_info?.address?.district
+              ? `${p.general_info.address.district.codename || ''}|${p.general_info.address.district.name || ''}|${p.general_info.address.ward.codename || ''}|${p.general_info.address.ward.name || ''}`
               : '',
             location: {
               lat: Number(p.general_info?.address?.latitude) || 0,
